@@ -584,9 +584,11 @@ function renderPinStatus(){
 
 // ── Supabase helpers ───────────────────────────────────────────────────────
 async function api(path,opts={}){
+  // Support both legacy JWT keys (eyJ...) and new sb_publishable keys
+  const authHeader = KEY.startsWith('eyJ') ? {'Authorization': 'Bearer '+KEY} : {};
   const r=await fetch(SB+'/rest/v1/'+path,{
     ...opts,
-    headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':opts.prefer||'return=representation',...(opts.headers||{})}
+    headers:{'apikey':KEY,...authHeader,'Content-Type':'application/json','Prefer':opts.prefer||'return=representation',...(opts.headers||{})}
   });
   if(!r.ok)throw new Error(await r.text());
   const t=await r.text(); return t?JSON.parse(t):null;

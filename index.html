@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TeamPulse – Lencioni Survey</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F7F5F0;--surface:#FFFFFF;--surface2:#F0EDE6;--ink:#1A1814;--ink2:#6B6660;--ink3:#9B9690;
+  --accent:#2D5BE3;--accent-bg:#EEF2FD;--green:#1A7A4A;--green-bg:#E8F5EE;
+  --amber:#B85E0A;--amber-bg:#FDF0E4;--red:#C0392B;--red-bg:#FCECEA;
+  --border:rgba(26,24,20,0.12);--border2:rgba(26,24,20,0.07);
+  --radius:12px;--radius-sm:8px;
+  --shadow:0 2px 12px rgba(26,24,20,0.08),0 1px 3px rgba(26,24,20,0.05);
+  --font-display:'DM Serif Display',Georgia,serif;--font-body:'DM Sans',sans-serif;
+}
+body{font-family:var(--font-body);background:var(--bg);color:var(--ink);min-height:100vh;font-size:15px;line-height:1.6;}
+
+/* NAV */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:0 2rem;height:60px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+.nav-logo{font-family:var(--font-display);font-size:20px;color:var(--ink);letter-spacing:-0.02em;}
+.nav-logo span{color:var(--accent);font-style:italic;}
+.nav-tabs{display:flex;gap:4px;}
+.nav-tab{padding:6px 16px;border-radius:var(--radius-sm);border:none;background:none;font-family:var(--font-body);font-size:14px;font-weight:500;color:var(--ink2);cursor:pointer;transition:all 0.15s;}
+.nav-tab:hover{background:var(--surface2);color:var(--ink);}
+.nav-tab.active{background:var(--accent);color:#fff;}
+.nav-tag{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;}
+.nav-tag.on{background:var(--green-bg);color:var(--green);}
+.nav-tag.off{background:var(--red-bg);color:var(--red);}
+
+/* LAYOUT */
+.page{display:none;padding:2rem;max-width:960px;margin:0 auto;}
+.page.active{display:block;}
+.page-title{font-family:var(--font-display);font-size:32px;color:var(--ink);letter-spacing:-0.02em;line-height:1.2;}
+.page-sub{color:var(--ink2);margin-top:6px;font-size:14px;margin-bottom:2rem;}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;box-shadow:var(--shadow);}
+.card-title{font-weight:600;font-size:13px;color:var(--ink);margin-bottom:1rem;text-transform:uppercase;letter-spacing:0.06em;}
+.mt{margin-top:1rem;}
+
+/* SETUP */
+.setup-wrap{max-width:600px;margin:0 auto;padding:2rem;}
+.setup-logo{font-family:var(--font-display);font-size:28px;color:var(--ink);text-align:center;margin-bottom:2rem;}
+.setup-logo span{color:var(--accent);font-style:italic;}
+.step-indicator{display:flex;align-items:center;gap:8px;margin-bottom:2rem;justify-content:center;}
+.step-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;border:1.5px solid var(--border);color:var(--ink3);background:var(--surface);}
+.step-dot.done{background:var(--green);border-color:var(--green);color:#fff;}
+.step-dot.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.step-line{flex:1;height:1px;background:var(--border);}
+.setup-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:2rem;box-shadow:var(--shadow);}
+.setup-step{display:none;}
+.setup-step.active{display:block;}
+.setup-title{font-family:var(--font-display);font-size:24px;margin-bottom:8px;}
+.setup-sub{color:var(--ink2);font-size:14px;margin-bottom:1.5rem;line-height:1.7;}
+.field{margin-bottom:1rem;}
+.field label{display:block;font-size:13px;font-weight:600;color:var(--ink);margin-bottom:5px;}
+.hint{font-size:12px;color:var(--ink3);margin-top:4px;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:var(--radius-sm);font-family:var(--font-body);font-size:14px;font-weight:500;cursor:pointer;transition:all 0.15s;border:1px solid transparent;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:#1d4bcf;}
+.btn-outline{background:transparent;border-color:var(--border);color:var(--ink2);}
+.btn-outline:hover{background:var(--surface2);color:var(--ink);}
+.btn-danger{background:var(--red-bg);color:var(--red);}
+.btn-sm{padding:5px 12px;font-size:13px;}
+.btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+/* FORM ELEMENTS */
+input[type=text],input[type=url],select,textarea{
+  font-family:var(--font-body);font-size:14px;padding:9px 12px;
+  border:1px solid var(--border);border-radius:var(--radius-sm);
+  background:var(--surface);color:var(--ink);width:100%;outline:none;transition:border-color 0.15s;
+}
+input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(45,91,227,0.1);}
+.input-error{border-color:var(--red)!important;}
+
+/* BADGES */
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;}
+.badge-trust{background:#EEF2FD;color:#2D5BE3;}
+.badge-conflict{background:#FDF0E4;color:#B85E0A;}
+.badge-commitment{background:#E8F5EE;color:#1A7A4A;}
+.badge-accountability{background:#F5EEF8;color:#7D3C98;}
+.badge-results{background:#FCECEA;color:#C0392B;}
+
+/* ADMIN */
+.team-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin-bottom:1rem;}
+.team-chip{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--surface2);border-radius:var(--radius-sm);border:1px solid var(--border2);}
+.team-chip-name{font-size:14px;font-weight:500;}
+.team-chip-del{background:none;border:none;cursor:pointer;color:var(--ink3);font-size:18px;line-height:1;transition:color 0.15s;}
+.team-chip-del:hover{color:var(--red);}
+.q-filter{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;}
+.q-filter-btn{padding:4px 12px;border-radius:20px;border:1px solid var(--border);font-family:var(--font-body);font-size:12px;font-weight:500;background:var(--surface);color:var(--ink2);cursor:pointer;transition:all 0.15s;}
+.q-filter-btn.active{border-color:var(--accent);background:var(--accent-bg);color:var(--accent);}
+.q-list{display:flex;flex-direction:column;gap:5px;max-height:380px;overflow-y:auto;}
+.q-item{display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--surface);cursor:pointer;transition:all 0.12s;}
+.q-item:hover,.q-item.selected{border-color:var(--accent);background:var(--accent-bg);}
+.q-check{width:16px;height:16px;border:1.5px solid var(--border);border-radius:4px;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;transition:all 0.12s;}
+.q-item.selected .q-check{background:var(--accent);border-color:var(--accent);}
+.q-num{font-size:11px;color:var(--ink3);font-weight:600;min-width:20px;}
+.q-text{font-size:13px;color:var(--ink);line-height:1.5;flex:1;}
+.link-box{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--surface2);border-radius:var(--radius-sm);border:1px dashed var(--border);}
+.link-url{font-size:13px;color:var(--accent);font-family:monospace;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* SURVEY */
+.survey-container{max-width:660px;margin:0 auto;}
+.survey-header{text-align:center;margin-bottom:2.5rem;}
+.survey-logo{font-family:var(--font-display);font-size:22px;color:var(--ink);margin-bottom:4px;}
+.survey-logo span{color:var(--accent);font-style:italic;}
+.survey-title{font-family:var(--font-display);font-size:26px;color:var(--ink);margin-bottom:8px;}
+.survey-desc{color:var(--ink2);font-size:14px;}
+.progress-track{height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;margin-bottom:6px;}
+.progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width 0.3s ease;}
+.progress-label{font-size:12px;color:var(--ink3);}
+.survey-q-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem 2rem;box-shadow:var(--shadow);margin:1rem 0;animation:fadeSlide 0.2s ease;}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.q-body{font-size:15px;color:var(--ink);line-height:1.6;margin-bottom:1.25rem;}
+.q-cat-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
+.scale-row{display:flex;gap:8px;}
+.scale-btn{flex:1;padding:10px 4px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:var(--font-body);font-size:14px;font-weight:600;background:var(--surface);color:var(--ink2);cursor:pointer;transition:all 0.12s;text-align:center;}
+.scale-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg);}
+.scale-btn.selected{background:var(--accent);border-color:var(--accent);color:#fff;}
+.scale-labels{display:flex;justify-content:space-between;margin-top:6px;}
+.scale-label{font-size:11px;color:var(--ink3);}
+.survey-nav{display:flex;justify-content:space-between;align-items:center;margin-top:1.5rem;}
+
+/* RESULTS */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:1rem;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;text-align:center;box-shadow:var(--shadow);}
+.stat-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink3);margin-bottom:6px;}
+.stat-value{font-family:var(--font-display);font-size:34px;color:var(--ink);letter-spacing:-0.02em;}
+.stat-max{font-size:14px;color:var(--ink3);}
+.bar-chart{display:flex;flex-direction:column;gap:14px;}
+.bar-row{display:flex;align-items:center;gap:12px;}
+.bar-label{font-size:13px;font-weight:500;color:var(--ink);width:130px;flex-shrink:0;}
+.bar-track{flex:1;height:32px;background:var(--surface2);border-radius:6px;overflow:hidden;position:relative;}
+.bar-fill{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:10px;transition:width 0.7s cubic-bezier(0.34,1.56,0.64,1);}
+.bar-fill span{font-size:13px;font-weight:600;color:#fff;white-space:nowrap;}
+.bar-fill2{height:100%;border-radius:6px;opacity:0.45;position:absolute;top:0;left:0;transition:width 0.7s cubic-bezier(0.34,1.56,0.64,1);}
+.bar-score{font-size:14px;font-weight:600;color:var(--ink);width:32px;text-align:right;flex-shrink:0;}
+.team-pill{padding:6px 16px;border-radius:20px;border:1.5px solid var(--border);font-family:var(--font-body);font-size:13px;font-weight:500;background:var(--surface);color:var(--ink2);cursor:pointer;transition:all 0.15s;}
+.team-pill.active{border-color:var(--accent);background:var(--accent-bg);color:var(--accent);}
+.team-pill.compare{border-color:var(--amber);background:var(--amber-bg);color:var(--amber);}
+.responses-table{width:100%;border-collapse:collapse;font-size:13px;}
+.responses-table th{text-align:left;padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink3);border-bottom:1px solid var(--border);}
+.responses-table td{padding:10px 12px;border-bottom:1px solid var(--border2);}
+.responses-table tr:last-child td{border-bottom:none;}
+.score-pill{display:inline-block;width:30px;text-align:center;padding:2px 0;border-radius:4px;font-weight:600;font-size:12px;}
+.score-5{background:#E8F5EE;color:#1A7A4A}.score-4{background:#EEF2FD;color:#2D5BE3}
+.score-3{background:#FDF7E4;color:#8C6D0A}.score-2{background:#FDF0E4;color:#B85E0A}
+.score-1{background:#FCECEA;color:#C0392B}
+.empty-state{text-align:center;padding:3rem;color:var(--ink3);}
+.empty-icon{font-size:40px;margin-bottom:12px;}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.flex-1{flex:1;}
+.text-sm{font-size:13px;color:var(--ink2);}
+.text-xs{font-size:12px;color:var(--ink3);}
+.font-bold{font-weight:600;}
+.alert{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:1rem;}
+.alert-success{background:var(--green-bg);color:var(--green);border:1px solid rgba(26,122,74,0.2);}
+.alert-error{background:var(--red-bg);color:var(--red);border:1px solid rgba(192,57,43,0.2);}
+.alert-info{background:var(--accent-bg);color:var(--accent);border:1px solid rgba(45,91,227,0.2);}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;vertical-align:middle;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink2);}
+.legend-dot{width:12px;height:12px;border-radius:3px;}
+
+/* SQL block */
+.sql-block{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;font-family:monospace;font-size:12px;color:var(--ink);line-height:1.8;margin:0 0 1rem;overflow-x:auto;white-space:pre-wrap;position:relative;}
+
+/* PIN LOCK */
+.pin-overlay{position:fixed;inset:0;background:rgba(247,245,240,0.97);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;}
+.pin-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:2.5rem 2rem;box-shadow:var(--shadow-lg,0 8px 32px rgba(26,24,20,0.12));width:100%;max-width:360px;text-align:center;}
+.pin-icon{font-size:36px;margin-bottom:1rem;}
+.pin-title{font-family:var(--font-display);font-size:24px;margin-bottom:6px;}
+.pin-sub{color:var(--ink2);font-size:14px;margin-bottom:1.5rem;}
+.pin-dots{display:flex;gap:10px;justify-content:center;margin-bottom:1.5rem;}
+.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--border);background:var(--surface);transition:all 0.15s;}
+.pin-dot.filled{background:var(--accent);border-color:var(--accent);}
+.pin-dot.error{background:var(--red);border-color:var(--red);}
+.pin-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:220px;margin:0 auto 1rem;}
+.pin-key{padding:14px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);font-family:var(--font-body);font-size:18px;font-weight:500;cursor:pointer;transition:all 0.12s;color:var(--ink);}
+.pin-key:hover{background:var(--surface2);}
+.pin-key:active{transform:scale(0.95);}
+.pin-key.del{font-size:14px;color:var(--ink2);}
+.pin-err{color:var(--red);font-size:13px;min-height:20px;margin-top:4px;}
+.pin-session-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;background:var(--green-bg);color:var(--green);font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:var(--font-body);}
+.pin-session-badge:hover{background:#d0eddb;}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo">Team<span>Pulse</span></div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span id="db-status" class="nav-tag off">Not connected</span>
+    <button id="admin-badge" class="pin-session-badge" style="display:none" onclick="lockAdmin()" title="Click to lock">🔓 Admin</button>
+    <div class="nav-tabs" id="nav-tabs" style="display:none">
+      <button class="nav-tab active" onclick="showPageGuarded('admin')">Admin</button>
+      <button class="nav-tab" onclick="showPage('survey')">Survey</button>
+      <button class="nav-tab" onclick="showPageGuarded('results')">Results</button>
+    </div>
+  </div>
+</nav>
+
+<!-- PIN OVERLAY -->
+<div id="pin-overlay" class="pin-overlay" style="display:none">
+  <div class="pin-box">
+    <div class="pin-icon">🔒</div>
+    <div class="pin-title" id="pin-title">Admin access</div>
+    <div class="pin-sub" id="pin-sub">Enter your admin PIN to continue.</div>
+    <div class="pin-dots" id="pin-dots">
+      <div class="pin-dot" id="pd0"></div>
+      <div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div>
+      <div class="pin-dot" id="pd3"></div>
+    </div>
+    <div class="pin-keypad">
+      <button class="pin-key" onclick="pinKey('1')">1</button>
+      <button class="pin-key" onclick="pinKey('2')">2</button>
+      <button class="pin-key" onclick="pinKey('3')">3</button>
+      <button class="pin-key" onclick="pinKey('4')">4</button>
+      <button class="pin-key" onclick="pinKey('5')">5</button>
+      <button class="pin-key" onclick="pinKey('6')">6</button>
+      <button class="pin-key" onclick="pinKey('7')">7</button>
+      <button class="pin-key" onclick="pinKey('8')">8</button>
+      <button class="pin-key" onclick="pinKey('9')">9</button>
+      <button class="pin-key" onclick="pinKey('')"></button>
+      <button class="pin-key" onclick="pinKey('0')">0</button>
+      <button class="pin-key del" onclick="pinKey('del')">⌫</button>
+    </div>
+    <div class="pin-err" id="pin-err"></div>
+    <div style="margin-top:1rem">
+      <button class="btn btn-outline btn-sm" onclick="cancelPin()">Cancel</button>
+    </div>
+    <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border2)">
+      <div style="font-size:12px;color:var(--ink3)">First time? Set your PIN in the Admin panel after connecting.</div>
+    </div>
+  </div>
+</div>
+
+<!-- SETUP PAGE -->
+<div id="page-setup" class="page active" style="max-width:100%">
+  <div class="setup-wrap">
+    <div class="setup-logo">Team<span>Pulse</span></div>
+    <div class="step-indicator">
+      <div class="step-dot active" id="sdot-1">1</div>
+      <div class="step-line"></div>
+      <div class="step-dot" id="sdot-2">2</div>
+      <div class="step-line"></div>
+      <div class="step-dot" id="sdot-3">3</div>
+    </div>
+    <div class="setup-card">
+
+      <div class="setup-step active" id="setup-step-1">
+        <div class="setup-title">Create a free Supabase project</div>
+        <div class="setup-sub">Supabase stores all survey responses and teams in a free hosted database accessible from any device or browser.</div>
+        <ol style="color:var(--ink2);font-size:14px;line-height:2.2;padding-left:1.2rem;margin-bottom:1.5rem;">
+          <li>Go to <a href="https://supabase.com" target="_blank" style="color:var(--accent)">supabase.com</a> → <strong>Start your project</strong></li>
+          <li>Sign up with GitHub (fastest) and create a new project</li>
+          <li>Pick any region, set a database password, wait ~2 min</li>
+          <li>Once the project is ready, click Next</li>
+        </ol>
+        <div style="text-align:right"><button class="btn btn-primary" onclick="goStep(2)">Next →</button></div>
+      </div>
+
+      <div class="setup-step" id="setup-step-2">
+        <div class="setup-title">Create the database tables</div>
+        <div class="setup-sub">In Supabase go to <strong>SQL Editor</strong> and run this query. It creates the <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">teams</code> and <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">responses</code> tables.</div>
+        <div style="position:relative">
+          <pre id="sql-pre" class="sql-block">-- Teams table
+create table if not exists teams (
+  id uuid primary key default gen_random_uuid(),
+  name text not null unique,
+  created_at timestamptz default now()
+);
+
+-- Responses table
+create table if not exists responses (
+  id uuid primary key default gen_random_uuid(),
+  team_id uuid references teams(id) on delete cascade,
+  team_name text not null,
+  answers jsonb not null,
+  submitted_at timestamptz default now()
+);
+
+-- Row-level security (allow public read/write — no login needed for respondents)
+alter table teams enable row level security;
+alter table responses enable row level security;
+
+create policy "public read teams"    on teams     for select using (true);
+create policy "public insert teams"  on teams     for insert with check (true);
+create policy "public delete teams"  on teams     for delete using (true);
+create policy "public read resp"     on responses for select using (true);
+create policy "public insert resp"   on responses for insert with check (true);
+create policy "public delete resp"   on responses for delete using (true);</pre>
+          <button class="btn btn-outline btn-sm" onclick="copySQL(this)" style="position:absolute;top:8px;right:8px">Copy SQL</button>
+        </div>
+        <div style="text-align:right;margin-top:8px">
+          <button class="btn btn-outline" onclick="goStep(1)" style="margin-right:8px">← Back</button>
+          <button class="btn btn-primary" onclick="goStep(3)">Done, next →</button>
+        </div>
+      </div>
+
+      <div class="setup-step" id="setup-step-3">
+        <div class="setup-title">Connect to your project</div>
+        <div class="setup-sub">In Supabase go to <strong>Project Settings → API</strong>. Copy your Project URL and the <code style="background:var(--surface2);padding:1px 4px;border-radius:4px">anon public</code> key.</div>
+        <div class="field">
+          <label>Project URL</label>
+          <input type="url" id="sb-url" placeholder="https://xxxxxxxxxxxx.supabase.co">
+          <div class="hint">Looks like: https://abcdefghijkl.supabase.co</div>
+        </div>
+        <div class="field">
+          <label>Anon / Public Key</label>
+          <input type="text" id="sb-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+          <div class="hint">Found under "Project API Keys" → anon public</div>
+        </div>
+        <div id="connect-err" class="alert alert-error" style="display:none">Could not connect. Double-check your URL and key, confirm you ran the SQL, then retry.</div>
+        <div style="text-align:right;margin-top:1.5rem">
+          <button class="btn btn-outline" onclick="goStep(2)" style="margin-right:8px">← Back</button>
+          <button class="btn btn-primary" id="connect-btn" onclick="doConnect()">Connect <span id="conn-spin" style="display:none" class="spinner"></span></button>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:1.2rem">
+      <button onclick="restoreCreds()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:12px;font-family:var(--font-body)">Restore saved connection</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN PAGE -->
+<div id="page-admin" class="page">
+  <div class="page-title">Admin panel</div>
+  <div class="page-sub">Manage teams, pick questions, share the survey link.</div>
+
+  <div class="card">
+    <div class="card-title">Teams</div>
+    <div class="team-list" id="team-list"><div class="text-sm" style="color:var(--ink3)">Loading…</div></div>
+    <div class="row">
+      <input type="text" id="new-team" placeholder="New team name…" style="max-width:260px" onkeydown="if(event.key==='Enter')addTeam()">
+      <button class="btn btn-outline btn-sm" onclick="addTeam()">+ Add</button>
+    </div>
+  </div>
+
+  <div class="card mt">
+    <div class="card-title">Question set</div>
+    <div class="row" style="margin-bottom:10px">
+      <span class="text-sm flex-1"><span id="sel-count" class="font-bold">37</span> of 37 selected</span>
+      <button class="btn btn-outline btn-sm" onclick="selectAll()">All</button>
+      <button class="btn btn-outline btn-sm" onclick="clearAll()">None</button>
+    </div>
+    <div class="q-filter">
+      <button class="q-filter-btn active" onclick="filterCat(this,'all')">All</button>
+      <button class="q-filter-btn" onclick="filterCat(this,'Confiance')">Trust</button>
+      <button class="q-filter-btn" onclick="filterCat(this,'Conflit')">Conflict</button>
+      <button class="q-filter-btn" onclick="filterCat(this,'Engagement')">Commitment</button>
+      <button class="q-filter-btn" onclick="filterCat(this,'Responsabilité')">Accountability</button>
+      <button class="q-filter-btn" onclick="filterCat(this,'Résultats')">Results</button>
+    </div>
+    <div class="q-list" id="q-list"></div>
+  </div>
+
+  <div class="card mt">
+    <div class="card-title">Shareable survey link</div>
+    <div class="text-sm" style="margin-bottom:10px">Send this to anyone — internal or external. Opens directly in the Survey tab, no login needed.</div>
+    <div class="link-box">
+      <span class="link-url" id="share-url">—</span>
+      <button class="btn btn-outline btn-sm" onclick="copyShare(this)">Copy</button>
+    </div>
+    <div style="margin-top:1rem">
+      <button class="btn btn-primary btn-sm" onclick="showPage('survey')">Preview survey →</button>
+    </div>
+  </div>
+
+  <div class="card mt">
+    <div class="card-title">Admin PIN</div>
+    <div class="text-sm" style="margin-bottom:12px">Protect Admin and Results with a 4-digit PIN. Survey respondents are never asked for a PIN.</div>
+    <div id="pin-status-box"></div>
+    <div id="pin-set-form">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:320px;margin-bottom:10px">
+        <div>
+          <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">New PIN</label>
+          <input type="password" id="pin-a" maxlength="4" placeholder="4 digits" inputmode="numeric" pattern="[0-9]*">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Confirm PIN</label>
+          <input type="password" id="pin-b" maxlength="4" placeholder="4 digits" inputmode="numeric" pattern="[0-9]*">
+        </div>
+      </div>
+      <div id="pin-set-err" class="alert alert-error" style="display:none;max-width:320px;margin-bottom:8px"></div>
+      <button class="btn btn-primary btn-sm" onclick="savePin()">Set PIN</button>
+    </div>
+  </div>
+
+  <div class="card mt" style="background:var(--surface2);border-style:dashed;">
+    <div class="card-title">Connection</div>
+    <div class="text-sm" style="margin-bottom:10px">Project: <strong id="proj-label"></strong></div>
+    <button class="btn btn-danger btn-sm" onclick="disconnect()">Disconnect / change project</button>
+  </div>
+</div>
+
+<!-- SURVEY PAGE -->
+<div id="page-survey" class="page">
+  <div class="survey-container">
+    <div class="survey-header">
+      <div class="survey-logo">Team<span>Pulse</span></div>
+      <div class="survey-title">Team Health Assessment</div>
+      <div class="survey-desc">Based on the Five Dysfunctions of a Team — Patrick Lencioni.<br>Rate each statement honestly from 1 (Never) to 5 (Always).</div>
+    </div>
+    <div id="survey-body"></div>
+  </div>
+</div>
+
+<!-- RESULTS PAGE -->
+<div id="page-results" class="page">
+  <div class="page-title">Results dashboard</div>
+  <div class="page-sub">Live from Supabase — visible across all devices.</div>
+  <div id="results-body"></div>
+</div>
+
+<script>
+// ── Questions ──────────────────────────────────────────────────────────────
+const Qs=[
+  {n:1,text:"Team members readily admit they are wrong.",cat:"Confiance"},
+  {n:2,text:"Team members are passionate and feel free to participate in team discussions.",cat:"Conflit"},
+  {n:3,text:"Team members are quick to point out colleagues who have contributed to the team.",cat:"Résultats"},
+  {n:4,text:"Team meetings are interesting and exciting (not boring).",cat:"Conflit"},
+  {n:5,text:"During team meetings, the most important and difficult items on the agenda are discussed.",cat:"Conflit"},
+  {n:6,text:"Team members discuss each other's personal tasks.",cat:"Confiance"},
+  {n:7,text:"Team members give their opinions, even if this may lead to disagreements.",cat:"Conflit"},
+  {n:8,text:"Team members identify each other's unproductive behavior.",cat:"Responsabilité"},
+  {n:9,text:"The team regularly achieves its objectives.",cat:"Résultats"},
+  {n:10,text:"Team members ask for help without hesitation.",cat:"Confiance"},
+  {n:11,text:"Team members leave the meeting knowing that everyone is committed to the agreements reached.",cat:"Engagement"},
+  {n:12,text:"During discussions, team members challenge each other to explain how they arrived at certain conclusions and opinions.",cat:"Conflit"},
+  {n:13,text:"Team members ask each other to intervene in the areas for which they are responsible.",cat:"Confiance"},
+  {n:14,text:"When the team fails to achieve common goals, each team member takes personal responsibility for improving performance.",cat:"Résultats"},
+  {n:15,text:"Team members sometimes make voluntary sacrifices in the interests of the team.",cat:"Résultats"},
+  {n:16,text:"Team members confront their colleagues with difficult situations in the respective areas for which others are responsible.",cat:"Responsabilité"},
+  {n:17,text:"Team members recognize and utilize each other's skills and expertise.",cat:"Confiance"},
+  {n:18,text:"Team members seek the opinion of other team members during meetings.",cat:"Conflit"},
+  {n:19,text:"Team members end meetings with clear, precise proposals and action points.",cat:"Engagement"},
+  {n:20,text:"Team members ask each other about their current strategies and methods.",cat:"Responsabilité"},
+  {n:21,text:"Team members ensure that under-performers feel sufficient pressure to know that improvements are expected.",cat:"Responsabilité"},
+  {n:22,text:"Team members can easily apologize to each other.",cat:"Confiance"},
+  {n:23,text:"Team members also bring unpopular viewpoints to the fore.",cat:"Conflit"},
+  {n:24,text:"The team is clear about its objectives and priorities.",cat:"Engagement"},
+  {n:25,text:"Team members are modest about their own contributions.",cat:"Résultats"},
+  {n:26,text:"All team members are evaluated according to the same high standards.",cat:"Responsabilité"},
+  {n:27,text:"In the event of conflict, the team confronts the issue and deals with it in depth before moving on.",cat:"Conflit"},
+  {n:28,text:"The whole team stands behind common objectives.",cat:"Engagement"},
+  {n:29,text:"The team makes decisions, even if all the information is not available.",cat:"Engagement"},
+  {n:30,text:"Team members value collective success over individual performance.",cat:"Résultats"},
+  {n:31,text:"Team members are direct and honest with each other.",cat:"Confiance"},
+  {n:32,text:"Team members talk freely about their private lives.",cat:"Confiance"},
+  {n:33,text:"The team sticks to decisions.",cat:"Engagement"},
+  {n:34,text:"Team members keep promises and agreements.",cat:"Responsabilité"},
+  {n:35,text:"Team members give each other constructive, unsolicited feedback.",cat:"Responsabilité"},
+  {n:36,text:"Team members attach little importance to titles or status.",cat:"Résultats"},
+  {n:37,text:"Team members support group decisions, even if they don't agree with them at first.",cat:"Engagement"},
+];
+const CAT={Confiance:"Trust",Conflit:"Conflict",Engagement:"Commitment",Responsabilité:"Accountability",Résultats:"Results"};
+const COL={Confiance:"#2D5BE3",Conflit:"#E8820A",Engagement:"#1A7A4A",Responsabilité:"#8E44AD",Résultats:"#C0392B"};
+const BC={Confiance:"badge-trust",Conflit:"badge-conflict",Engagement:"badge-commitment",Responsabilité:"badge-accountability",Résultats:"badge-results"};
+
+// ── State ──────────────────────────────────────────────────────────────────
+let SB='', KEY='';
+let teams=[];
+let selQs=new Set(Qs.map(q=>q.n));
+let catF='all';
+let sv={team:null,answers:{},step:0};
+let rTeam=null, cTeam=null, allResp=[];
+
+// ── PIN state ──────────────────────────────────────────────────────────────
+let pinEntry='';
+let pinTarget=null;   // page to open after successful PIN
+let adminUnlocked=false;
+const PIN_KEY='tp_pin';
+
+function getStoredPin(){ return localStorage.getItem(PIN_KEY)||''; }
+function hashPin(p){ let h=0; for(let i=0;i<p.length;i++){h=(h<<5)-h+p.charCodeAt(i);h|=0;} return String(h); }
+
+function showPageGuarded(p){
+  const pin=getStoredPin();
+  if(!pin){ showPage(p); return; }          // no PIN set → open freely
+  if(adminUnlocked){ showPage(p); return; } // already authenticated this session
+  pinTarget=p;
+  openPinOverlay();
+}
+
+function openPinOverlay(){
+  pinEntry='';
+  document.getElementById('pin-err').textContent='';
+  document.getElementById('pin-title').textContent=pinTarget==='results'?'Results access':'Admin access';
+  document.getElementById('pin-sub').textContent='Enter your 4-digit admin PIN.';
+  updatePinDots();
+  document.getElementById('pin-overlay').style.display='flex';
+}
+
+function cancelPin(){
+  document.getElementById('pin-overlay').style.display='none';
+  pinEntry=''; pinTarget=null;
+}
+
+function pinKey(k){
+  if(k===''||k===undefined) return;
+  if(k==='del'){ pinEntry=pinEntry.slice(0,-1); updatePinDots(); return; }
+  if(pinEntry.length>=4) return;
+  pinEntry+=k;
+  updatePinDots();
+  if(pinEntry.length===4) setTimeout(checkPin,120);
+}
+
+function updatePinDots(err=false){
+  for(let i=0;i<4;i++){
+    const d=document.getElementById('pd'+i);
+    d.className='pin-dot'+(err?' error':pinEntry.length>i?' filled':'');
+  }
+}
+
+function checkPin(){
+  const stored=getStoredPin();
+  if(hashPin(pinEntry)===stored){
+    adminUnlocked=true;
+    document.getElementById('pin-overlay').style.display='none';
+    document.getElementById('admin-badge').style.display='flex';
+    const dest=pinTarget; pinEntry=''; pinTarget=null;
+    showPage(dest);
+  } else {
+    updatePinDots(true);
+    document.getElementById('pin-err').textContent='Incorrect PIN. Try again.';
+    setTimeout(()=>{ pinEntry=''; updatePinDots(); document.getElementById('pin-err').textContent=''; },900);
+  }
+}
+
+function lockAdmin(){
+  adminUnlocked=false;
+  document.getElementById('admin-badge').style.display='none';
+  showPage('survey');
+}
+
+function savePin(){
+  const a=document.getElementById('pin-a').value.trim();
+  const b=document.getElementById('pin-b').value.trim();
+  const errEl=document.getElementById('pin-set-err');
+  errEl.style.display='none';
+  if(!/^\d{4}$/.test(a)){ errEl.textContent='PIN must be exactly 4 digits.'; errEl.style.display='block'; return; }
+  if(a!==b){ errEl.textContent='PINs do not match.'; errEl.style.display='block'; return; }
+  localStorage.setItem(PIN_KEY, hashPin(a));
+  document.getElementById('pin-a').value='';
+  document.getElementById('pin-b').value='';
+  adminUnlocked=true;
+  renderPinStatus();
+}
+
+function clearPin(){
+  if(!confirm('Remove the admin PIN? Admin and Results will be accessible to anyone.')) return;
+  localStorage.removeItem(PIN_KEY);
+  adminUnlocked=false;
+  document.getElementById('admin-badge').style.display='none';
+  renderPinStatus();
+}
+
+function renderPinStatus(){
+  const box=document.getElementById('pin-status-box');
+  const form=document.getElementById('pin-set-form');
+  if(getStoredPin()){
+    box.innerHTML=`<div class="alert alert-success" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <span>🔒 PIN is set. Admin &amp; Results are protected.</span>
+      <button class="btn btn-outline btn-sm" onclick="clearPin()">Remove PIN</button>
+    </div>`;
+    form.querySelector('label').closest('div').parentElement.querySelector('label:first-child') // reset labels
+    form.style.display='block';
+    form.querySelector('.btn').textContent='Change PIN';
+  } else {
+    box.innerHTML=`<div class="alert alert-info" style="margin-bottom:10px">No PIN set — Admin and Results are currently open to anyone who has the app URL.</div>`;
+    form.style.display='block';
+    form.querySelector('.btn').textContent='Set PIN';
+  }
+}
+
+// ── Supabase helpers ───────────────────────────────────────────────────────
+async function api(path,opts={}){
+  const r=await fetch(SB+'/rest/v1/'+path,{
+    ...opts,
+    headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':opts.prefer||'return=representation',...(opts.headers||{})}
+  });
+  if(!r.ok)throw new Error(await r.text());
+  const t=await r.text(); return t?JSON.parse(t):null;
+}
+const getTeams=()=>api('teams?select=*&order=created_at.asc');
+const addTeamDB=n=>api('teams',{method:'POST',body:JSON.stringify({name:n})});
+const delTeamDB=id=>api('teams?id=eq.'+id,{method:'DELETE',prefer:''});
+const saveResp=(tid,tn,ans)=>api('responses',{method:'POST',body:JSON.stringify({team_id:tid,team_name:tn,answers:ans})});
+const getResp=()=>api('responses?select=*&order=submitted_at.desc');
+
+// ── Setup ──────────────────────────────────────────────────────────────────
+function goStep(n){
+  document.querySelectorAll('.setup-step').forEach(e=>e.classList.remove('active'));
+  document.getElementById('setup-step-'+n).classList.add('active');
+  [1,2,3].forEach(i=>{
+    const d=document.getElementById('sdot-'+i);
+    d.className='step-dot'+(i<n?' done':i===n?' active':'');
+  });
+}
+function copySQL(btn){
+  navigator.clipboard.writeText(document.getElementById('sql-pre').textContent);
+  btn.textContent='Copied!'; setTimeout(()=>btn.textContent='Copy SQL',2000);
+}
+async function doConnect(){
+  const url=document.getElementById('sb-url').value.trim().replace(/\/$/,'');
+  const key=document.getElementById('sb-key').value.trim();
+  document.getElementById('connect-err').style.display='none';
+  if(!url||!key)return;
+  const btn=document.getElementById('connect-btn');
+  document.getElementById('conn-spin').style.display='inline-block';
+  btn.disabled=true;
+  try{
+    SB=url; KEY=key;
+    await getTeams();
+    localStorage.setItem('tp_u',url); localStorage.setItem('tp_k',key);
+    await boot();
+  }catch(e){
+    SB=''; KEY='';
+    document.getElementById('connect-err').style.display='block';
+  }
+  btn.disabled=false; document.getElementById('conn-spin').style.display='none';
+}
+function restoreCreds(){
+  const u=localStorage.getItem('tp_u'),k=localStorage.getItem('tp_k');
+  if(u&&k){document.getElementById('sb-url').value=u;document.getElementById('sb-key').value=k;goStep(3);}
+  else alert('No saved connection found.');
+}
+async function boot(){
+  document.getElementById('page-setup').classList.remove('active');
+  const st=document.getElementById('db-status');
+  st.textContent='Connected'; st.className='nav-tag on';
+  document.getElementById('nav-tabs').style.display='flex';
+  document.getElementById('proj-label').textContent=SB.replace('https://','').split('.')[0];
+
+  // read ?qs= param for shared survey links
+  const params=new URLSearchParams(location.search);
+  if(params.get('qs')){
+    selQs=new Set(params.get('qs').split(',').map(Number).filter(Boolean));
+  }
+
+  loadQList(); await loadTeams();
+  renderPinStatus();
+
+  // if no PIN set, mark as unlocked automatically
+  if(!getStoredPin()) adminUnlocked=true;
+
+  // if opened as a survey link, go straight to survey (no PIN needed)
+  if(params.get('qs')){ showPage('survey'); return; }
+
+  // go to admin (will prompt PIN if set)
+  showPageGuarded('admin');
+  if(adminUnlocked) document.getElementById('admin-badge').style.display='flex';
+}
+function disconnect(){
+  localStorage.removeItem('tp_u'); localStorage.removeItem('tp_k');
+  SB=''; KEY=''; adminUnlocked=false;
+  const st=document.getElementById('db-status');
+  st.textContent='Not connected'; st.className='nav-tag off';
+  document.getElementById('nav-tabs').style.display='none';
+  document.getElementById('admin-badge').style.display='none';
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-setup').classList.add('active');
+  goStep(1);
+}
+
+// ── Nav ────────────────────────────────────────────────────────────────────
+function showPage(p){
+  document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(e=>e.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(e=>{if(e.textContent.toLowerCase().trim()===p)e.classList.add('active');});
+  if(p==='survey')renderSurvey();
+  if(p==='results')fetchResults();
+}
+
+// ── Admin ──────────────────────────────────────────────────────────────────
+async function loadTeams(){
+  try{ teams=await getTeams(); renderTeams(); renderShareUrl(); }
+  catch(e){ document.getElementById('team-list').innerHTML='<div class="alert alert-error">Failed to load teams.</div>'; }
+}
+function renderTeams(){
+  const el=document.getElementById('team-list');
+  if(!teams.length){el.innerHTML='<div class="text-sm" style="color:var(--ink3)">No teams yet.</div>';return;}
+  el.innerHTML=teams.map(t=>`<div class="team-chip"><span class="team-chip-name">${t.name}</span><button class="team-chip-del" onclick="rmTeam('${t.id}','${t.name}')">×</button></div>`).join('');
+}
+async function addTeam(){
+  const inp=document.getElementById('new-team'), name=inp.value.trim();
+  if(!name)return;
+  if(teams.find(t=>t.name===name)){inp.classList.add('input-error');setTimeout(()=>inp.classList.remove('input-error'),1500);return;}
+  try{await addTeamDB(name);inp.value='';await loadTeams();}catch(e){alert('Could not add team.');}
+}
+async function rmTeam(id,name){
+  if(!confirm('Remove team "'+name+'" and all its responses?'))return;
+  try{await delTeamDB(id);await loadTeams();}catch(e){alert('Could not remove team.');}
+}
+function renderShareUrl(){
+  const base=location.origin+location.pathname;
+  document.getElementById('share-url').textContent=base+'?qs='+[...selQs].join(',');
+}
+function copyShare(btn){
+  navigator.clipboard.writeText(document.getElementById('share-url').textContent);
+  btn.textContent='Copied!'; setTimeout(()=>btn.textContent='Copy',2000);
+}
+function loadQList(){
+  const qs=catF==='all'?Qs:Qs.filter(q=>q.cat===catF);
+  document.getElementById('q-list').innerHTML=qs.map(q=>`
+    <div class="q-item ${selQs.has(q.n)?'selected':''}" onclick="togQ(${q.n})">
+      <div class="q-check">${selQs.has(q.n)?'<svg style="width:8px;height:8px" viewBox="0 0 8 8"><polyline points="1,4 3.5,6.5 7,2" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>':''}</div>
+      <span class="q-num">${q.n}</span>
+      <span class="q-text">${q.text}</span>
+      <span class="badge ${BC[q.cat]}">${CAT[q.cat]}</span>
+    </div>`).join('');
+  document.getElementById('sel-count').textContent=selQs.size;
+}
+function togQ(n){selQs.has(n)?selQs.delete(n):selQs.add(n);loadQList();renderShareUrl();}
+function selectAll(){selQs=new Set(Qs.map(q=>q.n));loadQList();renderShareUrl();}
+function clearAll(){selQs.clear();loadQList();renderShareUrl();}
+function filterCat(btn,cat){
+  catF=cat;
+  document.querySelectorAll('.q-filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); loadQList();
+}
+
+// ── Survey ─────────────────────────────────────────────────────────────────
+function renderSurvey(){
+  const el=document.getElementById('survey-body');
+  const aQs=Qs.filter(q=>selQs.has(q.n));
+  if(!aQs.length){el.innerHTML='<div class="empty-state card"><div class="empty-icon">⚙️</div><div>No questions selected.</div></div>';return;}
+  if(!sv.team) renderSvStart(el,aQs);
+  else if(sv.step>=aQs.length) renderSvDone(el);
+  else renderSvQ(el,aQs);
+}
+function renderSvStart(el,aQs){
+  if(!teams.length){el.innerHTML='<div class="empty-state card"><div class="empty-icon">🏢</div><div>No teams configured. Go to Admin first.</div></div>';return;}
+  el.innerHTML=`<div class="card">
+    <div style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Select your team</div>
+    <select id="t-sel" style="margin-bottom:1.5rem">
+      <option value="">— Choose —</option>
+      ${teams.map(t=>`<option value="${t.id}" data-name="${t.name}">${t.name}</option>`).join('')}
+    </select>
+    <div class="text-sm" style="margin-bottom:1.5rem">This survey has <strong>${aQs.length} questions</strong>. Responses are anonymous.</div>
+    <div class="row" style="justify-content:space-between">
+      <span style="font-size:12px;color:var(--ink3)">1 = Never · 5 = Always</span>
+      <button class="btn btn-primary" onclick="startSv()">Begin →</button>
+    </div>
+  </div>`;
+}
+function startSv(){
+  const sel=document.getElementById('t-sel');
+  if(!sel.value){sel.classList.add('input-error');return;}
+  const opt=sel.options[sel.selectedIndex];
+  sv={team:{id:sel.value,name:opt.dataset.name},answers:{},step:0};
+  renderSurvey();
+}
+function renderSvQ(el,aQs){
+  const q=aQs[sv.step], ans=sv.answers[q.n];
+  const pct=(sv.step/aQs.length*100).toFixed(0);
+  el.innerHTML=`
+  <div class="survey-progress">
+    <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+    <div class="progress-label">${sv.step} of ${aQs.length} answered · Team: <strong>${sv.team.name}</strong></div>
+  </div>
+  <div class="survey-q-card">
+    <div class="q-cat-row"><span style="font-size:12px;color:var(--ink3);font-weight:600">Q${q.n}</span><span class="badge ${BC[q.cat]}">${CAT[q.cat]}</span></div>
+    <div class="q-body">${q.text}</div>
+    <div class="scale-row">${[1,2,3,4,5].map(v=>`<button class="scale-btn ${ans===v?'selected':''}" onclick="setA(${q.n},${v})">${v}</button>`).join('')}</div>
+    <div class="scale-labels"><span class="scale-label">Never</span><span class="scale-label">Rarely</span><span class="scale-label">Occasionally</span><span class="scale-label">Most of the time</span><span class="scale-label">Always</span></div>
+  </div>
+  <div class="survey-nav">
+    <button class="btn btn-outline btn-sm" onclick="svBack()" ${sv.step===0?'disabled':''}>← Back</button>
+    <button class="btn btn-primary btn-sm" id="nxt" onclick="svNext(${aQs.length})" ${ans===undefined?'disabled':''}>
+      ${sv.step===aQs.length-1?'Submit ✓':'Next →'}
+    </button>
+  </div>`;
+}
+function setA(qn,val){
+  sv.answers[qn]=val;
+  renderSvQ(document.getElementById('survey-body'),Qs.filter(q=>selQs.has(q.n)));
+}
+function svBack(){if(sv.step>0){sv.step--;renderSurvey();}}
+async function svNext(tot){
+  const aQs=Qs.filter(q=>selQs.has(q.n));
+  if(sv.step<aQs.length-1){sv.step++;renderSurvey();return;}
+  const btn=document.getElementById('nxt');
+  btn.disabled=true; btn.innerHTML='Saving… <span class="spinner"></span>';
+  try{
+    await saveResp(sv.team.id,sv.team.name,sv.answers);
+    sv={team:null,answers:{},step:0}; renderSurvey();
+  }catch(e){btn.disabled=false;btn.textContent='Submit ✓';alert('Save failed, please retry.');}
+}
+function renderSvDone(el){
+  el.innerHTML=`<div class="survey-q-card" style="text-align:center;padding:3rem 2rem">
+    <div style="font-size:48px;margin-bottom:1rem">✅</div>
+    <div style="font-family:var(--font-display);font-size:26px;margin-bottom:8px">Thank you!</div>
+    <div class="text-sm" style="margin-bottom:1.5rem">Your response has been saved.</div>
+    <button class="btn btn-primary" onclick="sv={team:null,answers:{},step:0};renderSurvey()">Submit another →</button>
+    &nbsp;
+    <button class="btn btn-outline" onclick="showPage('results')">View results →</button>
+  </div>`;
+}
+
+// ── Results ────────────────────────────────────────────────────────────────
+function calcScores(resp){
+  const out={};
+  Object.keys(CAT).forEach(cat=>{
+    const qs=Qs.filter(q=>q.cat===cat), vals=[];
+    resp.forEach(r=>qs.forEach(q=>{const v=r.answers[q.n];if(v!==undefined)vals.push(v);}));
+    out[cat]=vals.length?(vals.reduce((a,b)=>a+b,0)/vals.length):null;
+  });
+  return out;
+}
+async function fetchResults(){
+  document.getElementById('results-body').innerHTML='<div class="empty-state"><div style="font-size:24px">⏳</div><div>Loading…</div></div>';
+  try{allResp=await getResp();renderResults();}
+  catch(e){document.getElementById('results-body').innerHTML='<div class="alert alert-error">Could not load: '+e.message+'</div>';}
+}
+function renderResults(){
+  const el=document.getElementById('results-body');
+  const tnames=[...new Set(allResp.map(r=>r.team_name))].sort();
+  if(!tnames.length){
+    el.innerHTML='<div class="empty-state card"><div class="empty-icon">📊</div><div class="font-bold" style="margin-bottom:8px">No responses yet</div><div class="text-sm">Complete the survey to see results.</div></div>';return;
+  }
+  if(!rTeam||!tnames.includes(rTeam))rTeam=tnames[0];
+  const tR=allResp.filter(r=>r.team_name===rTeam);
+  const sc=calcScores(tR);
+  const cR=cTeam&&cTeam!==rTeam?allResp.filter(r=>r.team_name===cTeam):null;
+  const cSc=cR?calcScores(cR):null;
+  const vals=Object.values(sc).filter(v=>v!==null);
+  const ov=vals.length?(vals.reduce((a,b)=>a+b,0)/vals.length):0;
+
+  el.innerHTML=`
+  <div class="card">
+    <div class="card-title">Team</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;${tnames.length>1?'margin-bottom:1rem':''}">
+      ${tnames.map(t=>`<button class="team-pill ${t===rTeam?'active':''}" onclick="rTeam='${t}';cTeam=null;renderResults()">${t} <span style="opacity:0.6;font-size:11px">${allResp.filter(r=>r.team_name===t).length}</span></button>`).join('')}
+    </div>
+    ${tnames.length>1?`<div style="font-size:12px;color:var(--ink3);margin-bottom:6px">Compare with:</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="team-pill ${!cTeam?'active':''}" onclick="cTeam=null;renderResults()" style="font-size:12px">None</button>
+      ${tnames.filter(t=>t!==rTeam).map(t=>`<button class="team-pill ${t===cTeam?'compare':''}" onclick="cTeam='${t}';renderResults()" style="font-size:12px">${t}</button>`).join('')}
+    </div>`:''}
+  </div>
+
+  <div class="stats-grid mt">
+    <div class="stat-card"><div class="stat-label">Responses</div><div class="stat-value">${tR.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Overall avg</div><div class="stat-value">${ov.toFixed(1)}<span class="stat-max">/5</span></div></div>
+    <div class="stat-card"><div class="stat-label">Strongest</div><div class="stat-value" style="font-size:18px;padding-top:8px">${ext(sc,'max')}</div></div>
+    <div class="stat-card"><div class="stat-label">Focus area</div><div class="stat-value" style="font-size:18px;padding-top:8px">${ext(sc,'min')}</div></div>
+  </div>
+
+  <div class="card mt">
+    <div class="card-title">Scores by dimension</div>
+    ${cSc?`<div style="display:flex;gap:16px;margin-bottom:1rem">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>${rTeam}</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--amber);opacity:0.55"></div>${cTeam}</div>
+    </div>`:''}
+    <div class="bar-chart">
+      ${Object.entries(CAT).map(([cat,label])=>{
+        const s=sc[cat],cs=cSc?cSc[cat]:null;
+        const p=s!==null?(s/5*100).toFixed(1):0, cp=cs!==null?(cs/5*100).toFixed(1):0;
+        return `<div class="bar-row">
+          <div class="bar-label">${label}</div>
+          <div class="bar-track">
+            ${cs!==null?`<div class="bar-fill2" style="width:${cp}%;background:${COL[cat]}"></div>`:''}
+            <div class="bar-fill" style="width:${p}%;background:${COL[cat]}"><span>${s!==null?s.toFixed(2):'-'}</span></div>
+          </div>
+          <div class="bar-score">${s!==null?s.toFixed(1):'-'}</div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>
+
+  <div class="card mt">
+    <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+      Individual responses <button class="btn btn-outline btn-sm" onclick="fetchResults()">↻ Refresh</button>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="responses-table">
+        <thead><tr><th>#</th><th>Date</th>${Object.values(CAT).map(l=>`<th>${l}</th>`).join('')}<th>Avg</th></tr></thead>
+        <tbody>
+          ${tR.map((r,i)=>{
+            const rs=calcScores([r]),v2=Object.values(rs).filter(v=>v!==null);
+            const ov2=v2.length?(v2.reduce((a,b)=>a+b,0)/v2.length):null;
+            return `<tr><td style="color:var(--ink3)">${i+1}</td><td style="color:var(--ink3)">${new Date(r.submitted_at).toLocaleDateString()}</td>
+            ${Object.keys(CAT).map(cat=>{const v=rs[cat];return `<td><span class="score-pill ${v!==null?'score-'+Math.round(v):''}">${v!==null?v.toFixed(1):'-'}</span></td>`;}).join('')}
+            <td><strong>${ov2!==null?ov2.toFixed(2):'-'}</strong></td></tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+}
+function ext(sc,dir){
+  let best=dir==='max'?-1:6,name='-';
+  Object.entries(sc).forEach(([c,v])=>{if(v!==null&&(dir==='max'?v>best:v<best)){best=v;name=CAT[c];}});
+  return name;
+}
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+(async()=>{
+  const u=localStorage.getItem('tp_u'),k=localStorage.getItem('tp_k');
+  if(u&&k){
+    SB=u;KEY=k;
+    try{await getTeams();await boot();}
+    catch(e){localStorage.removeItem('tp_u');localStorage.removeItem('tp_k');}
+  }
+})();
+</script>
+</body>
+</html>

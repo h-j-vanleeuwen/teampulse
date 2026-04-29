@@ -227,7 +227,7 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(45
 <!-- ADMIN PAGE -->
 <div id="page-admin" class="page">
   <div class="page-title">Admin panel</div>
-  <div class="page-sub">Manage teams, pick questions, share the survey link.</div>
+  <div class="page-sub">Each team has its own question set and shareable link.</div>
 
   <div class="card">
     <div class="card-title">Teams</div>
@@ -238,12 +238,16 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(45
     </div>
   </div>
 
-  <div class="card mt">
-    <div class="card-title">Question set</div>
+  <div class="card mt" id="team-qs-card" style="display:none">
+    <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
+      <span>Question set for: <span id="active-team-name" style="color:var(--accent)"></span></span>
+      <span id="sel-count" style="font-size:12px;color:var(--ink3);font-weight:400"></span>
+    </div>
     <div class="row" style="margin-bottom:10px">
-      <span class="text-sm flex-1"><span id="sel-count" class="font-bold">37</span> of 37 selected</span>
       <button class="btn btn-outline btn-sm" onclick="selectAll()">All</button>
       <button class="btn btn-outline btn-sm" onclick="clearAll()">None</button>
+      <div class="flex-1"></div>
+      <button class="btn btn-primary btn-sm" onclick="saveTeamQs()" id="save-qs-btn">Save questions</button>
     </div>
     <div class="q-filter">
       <button class="q-filter-btn active" onclick="filterCat(this,'all')">All</button>
@@ -256,15 +260,15 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(45
     <div class="q-list" id="q-list"></div>
   </div>
 
-  <div class="card mt">
-    <div class="card-title">Shareable survey link</div>
-    <div class="text-sm" style="margin-bottom:10px">Send this to anyone — internal or external. Opens directly in the Survey tab, no login needed.</div>
+  <div class="card mt" id="team-link-card" style="display:none">
+    <div class="card-title">Survey link for: <span id="link-team-name" style="color:var(--accent)"></span></div>
+    <div class="text-sm" style="margin-bottom:10px">Send this link to team members. It opens the survey pre-set for this team — no login needed.</div>
     <div class="link-box">
       <span class="link-url" id="share-url">—</span>
       <button class="btn btn-outline btn-sm" onclick="copyShare(this)">Copy</button>
     </div>
     <div style="margin-top:1rem">
-      <button class="btn btn-primary btn-sm" onclick="showPage('survey')">Preview survey →</button>
+      <button class="btn btn-primary btn-sm" onclick="previewTeamSurvey()">Preview survey →</button>
     </div>
   </div>
 
@@ -360,10 +364,13 @@ const BC={Confiance:"badge-trust",Conflit:"badge-conflict",Engagement:"badge-com
 const SB  = 'https://ocqvjzsogumonagjltli.supabase.co'; // your Supabase project URL
 const KEY = 'sb_publishable_3gruS1_em-wR3U60raWakA_Yr-5MiOZ';               // your Supabase anon/public key
 let teams=[];
-let selQs=new Set(Qs.map(q=>q.n));
+let teamQs={};        // {teamId: Set of question numbers}
+let activeTeamId=null; // team being edited in admin
+let selQs=new Set(Qs.map(q=>q.n)); // current editing set (for active team)
 let catF='all';
 let sv={team:null,answers:{},step:0};
 let rTeam=null, cTeam=null, allResp=[];
+let svPreselectedTeam=null; // team pre-selected via share link
 
 // ── PIN state ──────────────────────────────────────────────────────────────
 let pinEntry='';
@@ -486,29 +493,40 @@ async function api(path,opts={}){
   const t=await r.text(); return t?JSON.parse(t):null;
 }
 const getTeams=()=>api('teams?select=*&order=created_at.asc');
-const addTeamDB=n=>api('teams',{method:'POST',body:JSON.stringify({name:n})});
+const addTeamDB=n=>api('teams',{method:'POST',body:JSON.stringify({name:n,questions:JSON.stringify([...Array.from({length:37},(_,i)=>i+1)])})});
+const updateTeamQs=(id,qs)=>api('teams?id=eq.'+id,{method:'PATCH',body:JSON.stringify({questions:JSON.stringify([...qs])})});
 const delTeamDB=id=>api('teams?id=eq.'+id,{method:'DELETE',prefer:''});
 const saveResp=(tid,tn,ans)=>api('responses',{method:'POST',body:JSON.stringify({team_id:tid,team_name:tn,answers:ans})});
 const getResp=()=>api('responses?select=*&order=submitted_at.desc');
 
 // ── Admin ──────────────────────────────────────────────────────────────────
 async function boot(){
-  // read ?qs= param for shared survey links
-  const params=new URLSearchParams(location.search);
-  if(params.get('qs')){
-    selQs=new Set(params.get('qs').split(',').map(Number).filter(Boolean));
-  }
-
-  loadQList(); await loadTeams();
+  await loadTeams();
   renderPinStatus();
-
-  // if no PIN set, mark as unlocked automatically
   if(!getStoredPin()) adminUnlocked=true;
 
-  // if opened as a survey link, go straight to survey (no PIN needed)
-  if(params.get('qs')){ showPage('survey'); return; }
+  // handle ?team=X&qs=1,2,3 share links — go straight to survey
+  const params=new URLSearchParams(location.search);
+  if(params.get('team')||params.get('qs')){
+    const teamName=params.get('team');
+    const qsParam=params.get('qs');
+    // pre-select the team if it matches
+    if(teamName){
+      const t=teams.find(t=>t.name===teamName);
+      if(t){
+        svPreselectedTeam={id:t.id,name:t.name};
+        if(qsParam) selQs=new Set(qsParam.split(',').map(Number).filter(Boolean));
+        else try{selQs=new Set(JSON.parse(t.questions||'[]').map(Number));}catch(e){}
+      }
+    } else if(qsParam){
+      selQs=new Set(qsParam.split(',').map(Number).filter(Boolean));
+    }
+    loadQList();
+    showPage('survey');
+    return;
+  }
 
-  // default landing = survey (public)
+  loadQList();
   showPage('survey');
   if(adminUnlocked) document.getElementById('admin-badge').style.display='flex';
 }
@@ -526,27 +544,90 @@ function showPage(p){
 
 // ── Admin ──────────────────────────────────────────────────────────────────
 async function loadTeams(){
-  try{ teams=await getTeams(); renderTeams(); renderShareUrl(); }
+  try{
+    teams=await getTeams();
+    teams.forEach(t=>{
+      try{ teamQs[t.id]=new Set(JSON.parse(t.questions||'[]').map(Number)); }
+      catch(e){ teamQs[t.id]=new Set(Qs.map(q=>q.n)); }
+    });
+    renderTeams();
+  }
   catch(e){ document.getElementById('team-list').innerHTML='<div class="alert alert-error">Failed to load teams.</div>'; }
 }
 function renderTeams(){
   const el=document.getElementById('team-list');
   if(!teams.length){el.innerHTML='<div class="text-sm" style="color:var(--ink3)">No teams yet.</div>';return;}
-  el.innerHTML=teams.map(t=>`<div class="team-chip"><span class="team-chip-name">${t.name}</span><button class="team-chip-del" onclick="rmTeam('${t.id}','${t.name}')">×</button></div>`).join('');
+  el.innerHTML=teams.map(t=>`
+    <div class="team-chip ${t.id===activeTeamId?'selected':''}" style="${t.id===activeTeamId?'border-color:var(--accent);background:var(--accent-bg);':''}" >
+      <span class="team-chip-name" style="cursor:pointer" onclick="selectTeam('${t.id}')">${t.name}</span>
+      <div style="display:flex;gap:4px;align-items:center">
+        <button class="btn btn-outline btn-sm" style="padding:2px 8px;font-size:11px" onclick="selectTeam('${t.id}')">Edit</button>
+        <button class="team-chip-del" onclick="rmTeam('${t.id}','${t.name}')">×</button>
+      </div>
+    </div>`).join('');
+}
+function selectTeam(id){
+  activeTeamId=id;
+  const t=teams.find(t=>t.id===id);
+  if(!t)return;
+  // load this team's questions
+  try{ selQs=new Set(JSON.parse(t.questions||'[]').map(Number)); }
+  catch(e){ selQs=new Set(Qs.map(q=>q.n)); }
+  teamQs[id]=new Set(selQs);
+  document.getElementById('active-team-name').textContent=t.name;
+  document.getElementById('link-team-name').textContent=t.name;
+  document.getElementById('team-qs-card').style.display='block';
+  document.getElementById('team-link-card').style.display='block';
+  catF='all';
+  document.querySelectorAll('.q-filter-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+  loadQList();
+  renderShareUrl();
+  renderTeams();
+}
+async function saveTeamQs(){
+  if(!activeTeamId)return;
+  const btn=document.getElementById('save-qs-btn');
+  btn.disabled=true; btn.textContent='Saving…';
+  try{
+    await updateTeamQs(activeTeamId, selQs);
+    teamQs[activeTeamId]=new Set(selQs);
+    // update local cache
+    const t=teams.find(t=>t.id===activeTeamId);
+    if(t) t.questions=JSON.stringify([...selQs]);
+    btn.textContent='Saved ✓';
+    setTimeout(()=>{btn.disabled=false;btn.textContent='Save questions';},1500);
+  }catch(e){
+    btn.disabled=false; btn.textContent='Save questions';
+    alert('Could not save: '+e.message);
+  }
 }
 async function addTeam(){
   const inp=document.getElementById('new-team'), name=inp.value.trim();
   if(!name)return;
   if(teams.find(t=>t.name===name)){inp.classList.add('input-error');setTimeout(()=>inp.classList.remove('input-error'),1500);return;}
-  try{await addTeamDB(name);inp.value='';await loadTeams();}catch(e){alert('Could not add team.');}
+  try{
+    const res=await addTeamDB(name);
+    inp.value='';
+    await loadTeams();
+    // auto-select newly created team
+    const newT=teams.find(t=>t.name===name);
+    if(newT) selectTeam(newT.id);
+  }catch(e){alert('Could not add team.');}
 }
 async function rmTeam(id,name){
   if(!confirm('Remove team "'+name+'" and all its responses?'))return;
   try{await delTeamDB(id);await loadTeams();}catch(e){alert('Could not remove team.');}
 }
 function renderShareUrl(){
+  if(!activeTeamId)return;
+  const t=teams.find(t=>t.id===activeTeamId);
   const base=location.origin+location.pathname;
-  document.getElementById('share-url').textContent=base+'?qs='+[...selQs].join(',');
+  document.getElementById('share-url').textContent=base+'?team='+encodeURIComponent(t?t.name:'')+'&qs='+[...selQs].join(',');
+}
+function previewTeamSurvey(){
+  if(!activeTeamId)return;
+  const t=teams.find(t=>t.id===activeTeamId);
+  if(t){ sv={team:null,answers:{},step:0}; showPage('survey'); }
 }
 function copyShare(btn){
   navigator.clipboard.writeText(document.getElementById('share-url').textContent);
@@ -575,14 +656,26 @@ function filterCat(btn,cat){
 // ── Survey ─────────────────────────────────────────────────────────────────
 function renderSurvey(){
   const el=document.getElementById('survey-body');
-  const aQs=Qs.filter(q=>selQs.has(q.n));
-  if(!aQs.length){el.innerHTML='<div class="empty-state card"><div class="empty-icon">⚙️</div><div>No questions selected.</div></div>';return;}
+  // if a team is selected in the survey, use their questions
+  let qs=selQs;
+  if(sv.team){
+    const t=teams.find(t=>t.id===sv.team.id);
+    if(t) try{qs=new Set(JSON.parse(t.questions||'[]').map(Number));}catch(e){}
+  }
+  const aQs=Qs.filter(q=>qs.has(q.n));
+  if(!aQs.length){el.innerHTML='<div class="empty-state card"><div class="empty-icon">⚙️</div><div>No questions configured for this team.</div></div>';return;}
   if(!sv.team) renderSvStart(el,aQs);
   else if(sv.step>=aQs.length) renderSvDone(el);
   else renderSvQ(el,aQs);
 }
 function renderSvStart(el,aQs){
-  if(!teams.length){el.innerHTML='<div class="empty-state card"><div class="empty-icon">🏢</div><div>No teams configured. Go to Admin first.</div></div>';return;}
+  if(!teams.length){el.innerHTML='<div class="empty-state card"><div class="empty-icon">🏢</div><div>No teams configured.</div></div>';return;}
+  // if team pre-selected via share link, skip the selector
+  if(svPreselectedTeam){
+    sv={team:svPreselectedTeam,answers:{},step:0};
+    svPreselectedTeam=null;
+    renderSurvey(); return;
+  }
   el.innerHTML=`<div class="card">
     <div style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Select your team</div>
     <select id="t-sel" style="margin-bottom:1.5rem">
@@ -600,6 +693,9 @@ function startSv(){
   const sel=document.getElementById('t-sel');
   if(!sel.value){sel.classList.add('input-error');return;}
   const opt=sel.options[sel.selectedIndex];
+  // load that team's question set
+  const t=teams.find(t=>t.id===sel.value);
+  if(t) try{selQs=new Set(JSON.parse(t.questions||'[]').map(Number));}catch(e){}
   sv={team:{id:sel.value,name:opt.dataset.name},answers:{},step:0};
   renderSurvey();
 }
@@ -626,11 +722,17 @@ function renderSvQ(el,aQs){
 }
 function setA(qn,val){
   sv.answers[qn]=val;
-  renderSvQ(document.getElementById('survey-body'),Qs.filter(q=>selQs.has(q.n)));
+  const t=sv.team?teams.find(t=>t.id===sv.team.id):null;
+  let qs=selQs;
+  if(t) try{qs=new Set(JSON.parse(t.questions||'[]').map(Number));}catch(e){}
+  renderSvQ(document.getElementById('survey-body'),Qs.filter(q=>qs.has(q.n)));
 }
 function svBack(){if(sv.step>0){sv.step--;renderSurvey();}}
 async function svNext(tot){
-  const aQs=Qs.filter(q=>selQs.has(q.n));
+  const t=sv.team?teams.find(t=>t.id===sv.team.id):null;
+  let qs=selQs;
+  if(t) try{qs=new Set(JSON.parse(t.questions||'[]').map(Number));}catch(e){}
+  const aQs=Qs.filter(q=>qs.has(q.n));
   if(sv.step<aQs.length-1){sv.step++;renderSurvey();return;}
   const btn=document.getElementById('nxt');
   btn.disabled=true; btn.innerHTML='Saving… <span class="spinner"></span>';

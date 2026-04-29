@@ -41,24 +41,6 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--ink);min-heig
 .card-title{font-weight:600;font-size:13px;color:var(--ink);margin-bottom:1rem;text-transform:uppercase;letter-spacing:0.06em;}
 .mt{margin-top:1rem;}
 
-/* SETUP */
-.setup-wrap{max-width:600px;margin:0 auto;padding:2rem;}
-.setup-logo{font-family:var(--font-display);font-size:28px;color:var(--ink);text-align:center;margin-bottom:2rem;}
-.setup-logo span{color:var(--accent);font-style:italic;}
-.step-indicator{display:flex;align-items:center;gap:8px;margin-bottom:2rem;justify-content:center;}
-.step-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;border:1.5px solid var(--border);color:var(--ink3);background:var(--surface);}
-.step-dot.done{background:var(--green);border-color:var(--green);color:#fff;}
-.step-dot.active{background:var(--accent);border-color:var(--accent);color:#fff;}
-.step-line{flex:1;height:1px;background:var(--border);}
-.setup-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:2rem;box-shadow:var(--shadow);}
-.setup-step{display:none;}
-.setup-step.active{display:block;}
-.setup-title{font-family:var(--font-display);font-size:24px;margin-bottom:8px;}
-.setup-sub{color:var(--ink2);font-size:14px;margin-bottom:1.5rem;line-height:1.7;}
-.field{margin-bottom:1rem;}
-.field label{display:block;font-size:13px;font-weight:600;color:var(--ink);margin-bottom:5px;}
-.hint{font-size:12px;color:var(--ink3);margin-top:4px;}
-
 /* BUTTONS */
 .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:var(--radius-sm);font-family:var(--font-body);font-size:14px;font-weight:500;cursor:pointer;transition:all 0.15s;border:1px solid transparent;}
 .btn-primary{background:var(--accent);color:#fff;}
@@ -196,9 +178,8 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(45
 <nav class="nav">
   <div class="nav-logo">Team<span>Pulse</span></div>
   <div style="display:flex;align-items:center;gap:12px;">
-    <span id="db-status" class="nav-tag off">Not connected</span>
     <button id="admin-badge" class="pin-session-badge" style="display:none" onclick="lockAdmin()" title="Click to lock">🔓 Admin</button>
-    <div class="nav-tabs" id="nav-tabs" style="display:none">
+    <div class="nav-tabs" id="nav-tabs">
       <button class="nav-tab active" onclick="showPageGuarded('admin')">Admin</button>
       <button class="nav-tab" onclick="showPage('survey')">Survey</button>
       <button class="nav-tab" onclick="showPageGuarded('results')">Results</button>
@@ -237,173 +218,13 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(45
       <button class="btn btn-outline btn-sm" onclick="cancelPin()">Cancel</button>
     </div>
     <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border2)">
-      <div style="font-size:12px;color:var(--ink3)">First time? Set your PIN in the Admin panel after connecting.</div>
+      <div style="font-size:12px;color:var(--ink3)">Default PIN is 1234. Change it in the Admin panel.</div>
     </div>
-  </div>
-</div>
-
-<!-- SETUP PAGE -->
-<div id="page-setup" class="page active" style="max-width:100%">
-  <div class="setup-wrap">
-    <div class="setup-logo">Team<span>Pulse</span></div>
-    <div class="step-indicator">
-      <div class="step-dot active" id="sdot-1">1</div>
-      <div class="step-line"></div>
-      <div class="step-dot" id="sdot-2">2</div>
-      <div class="step-line"></div>
-      <div class="step-dot" id="sdot-3">3</div>
-    </div>
-    <div class="setup-card">
-
-      <div class="setup-step active" id="setup-step-1">
-        <div class="setup-title">Create a free Supabase project</div>
-        <div class="setup-sub">Supabase stores all survey responses and teams in a free hosted database accessible from any device or browser.</div>
-        <ol style="color:var(--ink2);font-size:14px;line-height:2.2;padding-left:1.2rem;margin-bottom:1.5rem;">
-          <li>Go to <a href="https://supabase.com" target="_blank" style="color:var(--accent)">supabase.com</a> → <strong>Start your project</strong></li>
-          <li>Sign up with GitHub (fastest) and create a new project</li>
-          <li>Pick any region, set a database password, wait ~2 min</li>
-          <li>Once the project is ready, click Next</li>
-        </ol>
-        <div style="text-align:right"><button class="btn btn-primary" onclick="goStep(2)">Next →</button></div>
-      </div>
-
-      <div class="setup-step" id="setup-step-2">
-        <div class="setup-title">Create the database tables</div>
-        <div class="setup-sub">In Supabase go to <strong>SQL Editor</strong> and run this query. It creates the <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">teams</code> and <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">responses</code> tables.</div>
-        <div style="position:relative">
-          <pre id="sql-pre" class="sql-block">-- Teams table
-create table if not exists teams (
-  id uuid primary key default gen_random_uuid(),
-  name text not null unique,
-  created_at timestamptz default now()
-);
-
--- Responses table
-create table if not exists responses (
-  id uuid primary key default gen_random_uuid(),
-  team_id uuid references teams(id) on delete cascade,
-  team_name text not null,
-  answers jsonb not null,
-  submitted_at timestamptz default now()
-);
-
--- Row-level security (allow public read/write — no login needed for respondents)
-alter table teams enable row level security;
-alter table responses enable row level security;
-
-create policy "public read teams"    on teams     for select using (true);
-create policy "public insert teams"  on teams     for insert with check (true);
-create policy "public delete teams"  on teams     for delete using (true);
-create policy "public read resp"     on responses for select using (true);
-create policy "public insert resp"   on responses for insert with check (true);
-create policy "public delete resp"   on responses for delete using (true);</pre>
-          <button class="btn btn-outline btn-sm" onclick="copySQL(this)" style="position:absolute;top:8px;right:8px">Copy SQL</button>
-        </div>
-        <div style="text-align:right;margin-top:8px">
-          <button class="btn btn-outline" onclick="goStep(1)" style="margin-right:8px">← Back</button>
-          <button class="btn btn-primary" onclick="goStep(3)">Done, next →</button>
-        </div>
-      </div>
-
-      <div class="setup-step" id="setup-step-3">
-        <div class="setup-title">Connect to your project</div>
-        <div class="setup-sub">In Supabase go to <strong>Project Settings → API</strong>. Copy your Project URL and the <code style="background:var(--surface2);padding:1px 4px;border-radius:4px">anon public</code> key.</div>
-        <div class="field">
-          <label>Project URL</label>
-          <input type="url" id="sb-url" placeholder="https://xxxxxxxxxxxx.supabase.co">
-          <div class="hint">Looks like: https://abcdefghijkl.supabase.co</div>
-        </div>
-        <div class="field">
-          <label>Anon / Public Key</label>
-          <input type="text" id="sb-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
-          <div class="hint">Found under "Project API Keys" → anon public</div>
-        </div>
-        <div id="connect-err" class="alert alert-error" style="display:none">Could not connect. Double-check your URL and key, confirm you ran the SQL, then retry.</div>
-        <div style="text-align:right;margin-top:1.5rem">
-          <button class="btn btn-outline" onclick="goStep(2)" style="margin-right:8px">← Back</button>
-          <button class="btn btn-primary" id="connect-btn" onclick="doConnect()">Connect <span id="conn-spin" style="display:none" class="spinner"></span></button>
-        </div>
-      </div>
-    </div>
-    <div style="text-align:center;margin-top:1.2rem">
-      <button onclick="restoreCreds()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:12px;font-family:var(--font-body)">Restore saved connection</button>
-    </div>
-  </div>
-</div>
-
-<!-- ADMIN PAGE -->
-<div id="page-admin" class="page">
-  <div class="page-title">Admin panel</div>
-  <div class="page-sub">Manage teams, pick questions, share the survey link.</div>
-
-  <div class="card">
-    <div class="card-title">Teams</div>
-    <div class="team-list" id="team-list"><div class="text-sm" style="color:var(--ink3)">Loading…</div></div>
-    <div class="row">
-      <input type="text" id="new-team" placeholder="New team name…" style="max-width:260px" onkeydown="if(event.key==='Enter')addTeam()">
-      <button class="btn btn-outline btn-sm" onclick="addTeam()">+ Add</button>
-    </div>
-  </div>
-
-  <div class="card mt">
-    <div class="card-title">Question set</div>
-    <div class="row" style="margin-bottom:10px">
-      <span class="text-sm flex-1"><span id="sel-count" class="font-bold">37</span> of 37 selected</span>
-      <button class="btn btn-outline btn-sm" onclick="selectAll()">All</button>
-      <button class="btn btn-outline btn-sm" onclick="clearAll()">None</button>
-    </div>
-    <div class="q-filter">
-      <button class="q-filter-btn active" onclick="filterCat(this,'all')">All</button>
-      <button class="q-filter-btn" onclick="filterCat(this,'Confiance')">Trust</button>
-      <button class="q-filter-btn" onclick="filterCat(this,'Conflit')">Conflict</button>
-      <button class="q-filter-btn" onclick="filterCat(this,'Engagement')">Commitment</button>
-      <button class="q-filter-btn" onclick="filterCat(this,'Responsabilité')">Accountability</button>
-      <button class="q-filter-btn" onclick="filterCat(this,'Résultats')">Results</button>
-    </div>
-    <div class="q-list" id="q-list"></div>
-  </div>
-
-  <div class="card mt">
-    <div class="card-title">Shareable survey link</div>
-    <div class="text-sm" style="margin-bottom:10px">Send this to anyone — internal or external. Opens directly in the Survey tab, no login needed.</div>
-    <div class="link-box">
-      <span class="link-url" id="share-url">—</span>
-      <button class="btn btn-outline btn-sm" onclick="copyShare(this)">Copy</button>
-    </div>
-    <div style="margin-top:1rem">
-      <button class="btn btn-primary btn-sm" onclick="showPage('survey')">Preview survey →</button>
-    </div>
-  </div>
-
-  <div class="card mt">
-    <div class="card-title">Admin PIN</div>
-    <div class="text-sm" style="margin-bottom:12px">Protect Admin and Results with a 4-digit PIN. Survey respondents are never asked for a PIN.</div>
-    <div id="pin-status-box"></div>
-    <div id="pin-set-form">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:320px;margin-bottom:10px">
-        <div>
-          <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">New PIN</label>
-          <input type="password" id="pin-a" maxlength="4" placeholder="4 digits" inputmode="numeric" pattern="[0-9]*">
-        </div>
-        <div>
-          <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Confirm PIN</label>
-          <input type="password" id="pin-b" maxlength="4" placeholder="4 digits" inputmode="numeric" pattern="[0-9]*">
-        </div>
-      </div>
-      <div id="pin-set-err" class="alert alert-error" style="display:none;max-width:320px;margin-bottom:8px"></div>
-      <button class="btn btn-primary btn-sm" onclick="savePin()">Set PIN</button>
-    </div>
-  </div>
-
-  <div class="card mt" style="background:var(--surface2);border-style:dashed;">
-    <div class="card-title">Connection</div>
-    <div class="text-sm" style="margin-bottom:10px">Project: <strong id="proj-label"></strong></div>
-    <button class="btn btn-danger btn-sm" onclick="disconnect()">Disconnect / change project</button>
   </div>
 </div>
 
 <!-- SURVEY PAGE -->
-<div id="page-survey" class="page">
+<div id="page-survey" class="page active">
   <div class="survey-container">
     <div class="survey-header">
       <div class="survey-logo">Team<span>Pulse</span></div>
@@ -467,7 +288,11 @@ const COL={Confiance:"#2D5BE3",Conflit:"#E8820A",Engagement:"#1A7A4A",Responsabi
 const BC={Confiance:"badge-trust",Conflit:"badge-conflict",Engagement:"badge-commitment",Responsabilité:"badge-accountability",Résultats:"badge-results"};
 
 // ── State ──────────────────────────────────────────────────────────────────
-let SB='', KEY='';
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  CONFIGURATION — edit these two lines, nothing else needed  ║
+// ╚══════════════════════════════════════════════════════════════╝
+const SB  = 'https://ocqvjzsogumonagjltli.supabase.co'; // your Supabase project URL
+const KEY = 'sb_publishable_3gruS1_em-wR3U60raWakA_Yr-5MiOZ';               // your Supabase anon/public key
 let teams=[];
 let selQs=new Set(Qs.map(q=>q.n));
 let catF='all';
@@ -480,7 +305,8 @@ let pinTarget=null;   // page to open after successful PIN
 let adminUnlocked=false;
 const PIN_KEY='tp_pin';
 
-function getStoredPin(){ return localStorage.getItem(PIN_KEY)||''; }
+const DEFAULT_PIN_HASH = String(('1234').split('').reduce((h,c)=>{h=(h<<5)-h+c.charCodeAt(0);return h|0;},0));
+function getStoredPin(){ return localStorage.getItem(PIN_KEY)||DEFAULT_PIN_HASH; }
 function hashPin(p){ let h=0; for(let i=0;i<p.length;i++){h=(h<<5)-h+p.charCodeAt(i);h|=0;} return String(h); }
 
 function showPageGuarded(p){
@@ -599,50 +425,8 @@ const delTeamDB=id=>api('teams?id=eq.'+id,{method:'DELETE',prefer:''});
 const saveResp=(tid,tn,ans)=>api('responses',{method:'POST',body:JSON.stringify({team_id:tid,team_name:tn,answers:ans})});
 const getResp=()=>api('responses?select=*&order=submitted_at.desc');
 
-// ── Setup ──────────────────────────────────────────────────────────────────
-function goStep(n){
-  document.querySelectorAll('.setup-step').forEach(e=>e.classList.remove('active'));
-  document.getElementById('setup-step-'+n).classList.add('active');
-  [1,2,3].forEach(i=>{
-    const d=document.getElementById('sdot-'+i);
-    d.className='step-dot'+(i<n?' done':i===n?' active':'');
-  });
-}
-function copySQL(btn){
-  navigator.clipboard.writeText(document.getElementById('sql-pre').textContent);
-  btn.textContent='Copied!'; setTimeout(()=>btn.textContent='Copy SQL',2000);
-}
-async function doConnect(){
-  const url=document.getElementById('sb-url').value.trim().replace(/\/$/,'');
-  const key=document.getElementById('sb-key').value.trim();
-  document.getElementById('connect-err').style.display='none';
-  if(!url||!key)return;
-  const btn=document.getElementById('connect-btn');
-  document.getElementById('conn-spin').style.display='inline-block';
-  btn.disabled=true;
-  try{
-    SB=url; KEY=key;
-    await getTeams();
-    localStorage.setItem('tp_u',url); localStorage.setItem('tp_k',key);
-    await boot();
-  }catch(e){
-    SB=''; KEY='';
-    document.getElementById('connect-err').style.display='block';
-  }
-  btn.disabled=false; document.getElementById('conn-spin').style.display='none';
-}
-function restoreCreds(){
-  const u=localStorage.getItem('tp_u'),k=localStorage.getItem('tp_k');
-  if(u&&k){document.getElementById('sb-url').value=u;document.getElementById('sb-key').value=k;goStep(3);}
-  else alert('No saved connection found.');
-}
+// ── Admin ──────────────────────────────────────────────────────────────────
 async function boot(){
-  document.getElementById('page-setup').classList.remove('active');
-  const st=document.getElementById('db-status');
-  st.textContent='Connected'; st.className='nav-tag on';
-  document.getElementById('nav-tabs').style.display='flex';
-  document.getElementById('proj-label').textContent=SB.replace('https://','').split('.')[0];
-
   // read ?qs= param for shared survey links
   const params=new URLSearchParams(location.search);
   if(params.get('qs')){
@@ -658,21 +442,11 @@ async function boot(){
   // if opened as a survey link, go straight to survey (no PIN needed)
   if(params.get('qs')){ showPage('survey'); return; }
 
-  // go to admin (will prompt PIN if set)
-  showPageGuarded('admin');
+  // default landing = survey (public)
+  showPage('survey');
   if(adminUnlocked) document.getElementById('admin-badge').style.display='flex';
 }
-function disconnect(){
-  localStorage.removeItem('tp_u'); localStorage.removeItem('tp_k');
-  SB=''; KEY=''; adminUnlocked=false;
-  const st=document.getElementById('db-status');
-  st.textContent='Not connected'; st.className='nav-tag off';
-  document.getElementById('nav-tabs').style.display='none';
-  document.getElementById('admin-badge').style.display='none';
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById('page-setup').classList.add('active');
-  goStep(1);
-}
+
 
 // ── Nav ────────────────────────────────────────────────────────────────────
 function showPage(p){
@@ -909,12 +683,8 @@ function ext(sc,dir){
 
 // ── Boot ───────────────────────────────────────────────────────────────────
 (async()=>{
-  const u=localStorage.getItem('tp_u'),k=localStorage.getItem('tp_k');
-  if(u&&k){
-    SB=u;KEY=k;
-    try{await getTeams();await boot();}
-    catch(e){localStorage.removeItem('tp_u');localStorage.removeItem('tp_k');}
-  }
+  try{ await boot(); }
+  catch(e){ console.error('Boot failed:',e); }
 })();
 </script>
 </body>

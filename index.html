@@ -223,6 +223,72 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(45
   </div>
 </div>
 
+
+<!-- ADMIN PAGE -->
+<div id="page-admin" class="page">
+  <div class="page-title">Admin panel</div>
+  <div class="page-sub">Manage teams, pick questions, share the survey link.</div>
+
+  <div class="card">
+    <div class="card-title">Teams</div>
+    <div class="team-list" id="team-list"><div class="text-sm" style="color:var(--ink3)">Loading…</div></div>
+    <div class="row">
+      <input type="text" id="new-team" placeholder="New team name…" style="max-width:260px" onkeydown="if(event.key==='Enter')addTeam()">
+      <button class="btn btn-outline btn-sm" onclick="addTeam()">+ Add</button>
+    </div>
+  </div>
+
+  <div class="card mt">
+    <div class="card-title">Question set</div>
+    <div class="row" style="margin-bottom:10px">
+      <span class="text-sm flex-1"><span id="sel-count" class="font-bold">37</span> of 37 selected</span>
+      <button class="btn btn-outline btn-sm" onclick="selectAll()">All</button>
+      <button class="btn btn-outline btn-sm" onclick="clearAll()">None</button>
+    </div>
+    <div class="q-filter">
+      <button class="q-filter-btn active" onclick="filterCat(this,'all')">All</button>
+      <button class="q-filter-btn" onclick="filterCat(this,'Confiance')">Trust</button>
+      <button class="q-filter-btn" onclick="filterCat(this,'Conflit')">Conflict</button>
+      <button class="q-filter-btn" onclick="filterCat(this,'Engagement')">Commitment</button>
+      <button class="q-filter-btn" onclick="filterCat(this,'Responsabilité')">Accountability</button>
+      <button class="q-filter-btn" onclick="filterCat(this,'Résultats')">Results</button>
+    </div>
+    <div class="q-list" id="q-list"></div>
+  </div>
+
+  <div class="card mt">
+    <div class="card-title">Shareable survey link</div>
+    <div class="text-sm" style="margin-bottom:10px">Send this to anyone — internal or external. Opens directly in the Survey tab, no login needed.</div>
+    <div class="link-box">
+      <span class="link-url" id="share-url">—</span>
+      <button class="btn btn-outline btn-sm" onclick="copyShare(this)">Copy</button>
+    </div>
+    <div style="margin-top:1rem">
+      <button class="btn btn-primary btn-sm" onclick="showPage('survey')">Preview survey →</button>
+    </div>
+  </div>
+
+  <div class="card mt">
+    <div class="card-title">Admin PIN</div>
+    <div class="text-sm" style="margin-bottom:12px">Default PIN is <strong>1234</strong>. Change it here. Survey respondents are never asked for a PIN.</div>
+    <div id="pin-status-box"></div>
+    <div id="pin-set-form">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:320px;margin-bottom:10px">
+        <div>
+          <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">New PIN</label>
+          <input type="password" id="pin-a" maxlength="4" placeholder="4 digits" inputmode="numeric" pattern="[0-9]*">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Confirm PIN</label>
+          <input type="password" id="pin-b" maxlength="4" placeholder="4 digits" inputmode="numeric" pattern="[0-9]*">
+        </div>
+      </div>
+      <div id="pin-set-err" class="alert alert-error" style="display:none;max-width:320px;margin-bottom:8px"></div>
+      <button class="btn btn-primary btn-sm" onclick="savePin()">Set PIN</button>
+    </div>
+  </div>
+</div>
+
 <!-- SURVEY PAGE -->
 <div id="page-survey" class="page active">
   <div class="survey-container">

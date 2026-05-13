@@ -647,41 +647,13 @@ function renderSurvey(){
 }
 
 function renderSvSelectRound(el){
-  if(!rounds.length){
-    el.innerHTML='<div class="empty-state card"><div class="empty-icon">&#9881;</div><div>No rounds configured yet. Ask your admin for a direct survey link.</div></div>';return;
-  }
-  const opts=rounds.map(r=>{
-    const t=teams.find(t=>t.id===r.team_id);
-    const qcount=JSON.parse(r.questions||'[]').length;
-    return `<option value="${r.id}" data-label="${r.label}" data-team="${t?t.name:''}" data-qcount="${qcount}">${t?t.name+' - ':'' }${r.label}</option>`;
-  }).join('');
-  el.innerHTML=`<div class="card">
-    <div style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Select your round</div>
-    <select id="r-sel" style="margin-bottom:1rem" onchange="updateRoundInfo()">
-      <option value="">- Choose -</option>${opts}
-    </select>
-    <div id="round-info" class="text-sm" style="margin-bottom:1.5rem;min-height:20px"></div>
-    <div class="row" style="justify-content:flex-end">
-      <button class="btn btn-primary" onclick="startSv()">Begin</button>
-    </div>
+  el.innerHTML=`<div class="empty-state card">
+    <div class="empty-icon">&#128279;</div>
+    <div class="font-bold" style="margin-bottom:8px;color:var(--ink)">No survey link detected</div>
+    <div class="text-sm">To fill out a survey, please use the personal link provided by your team admin.</div>
   </div>`;
 }
-function updateRoundInfo(){
-  const sel=document.getElementById('r-sel');
-  const info=document.getElementById('round-info');
-  if(!sel||!info)return;
-  if(!sel.value){info.textContent='';return;}
-  const opt=sel.options[sel.selectedIndex];
-  info.innerHTML=`Team: <strong>${opt.dataset.team}</strong> &nbsp;&middot;&nbsp; Round: <strong>${opt.dataset.label}</strong> &nbsp;&middot;&nbsp; <strong>${opt.dataset.qcount}</strong> questions`;
-}
-function startSv(){
-  const sel=document.getElementById('r-sel');
-  if(!sel||!sel.value){if(sel)sel.classList.add('input-error');return;}
-  const r=rounds.find(r=>r.id===sel.value);
-  const t=teams.find(t=>t.id===r.team_id);
-  sv={round:{id:r.id,label:r.label,teamName:t?t.name:'',questions:JSON.parse(r.questions||'[]')},firstName:'',lastName:'',answers:{},step:-1};
-  renderSurvey();
-}
+
 
 function renderSvName(el){
   el.innerHTML=`<div class="survey-q-card">

@@ -26,9 +26,6 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--ink);min-heig
 .nav-tab{padding:6px 16px;border-radius:var(--radius-sm);border:none;background:none;font-family:var(--font-body);font-size:14px;font-weight:500;color:var(--ink2);cursor:pointer;transition:all 0.15s;}
 .nav-tab:hover{background:var(--surface2);color:var(--ink);}
 .nav-tab.active{background:var(--accent);color:#fff;}
-.nav-tag{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;}
-.nav-tag.on{background:var(--green-bg);color:var(--green);}
-.nav-tag.off{background:var(--red-bg);color:var(--red);}
 
 /* LAYOUT */
 .page{display:none;padding:2rem;max-width:960px;margin:0 auto;}
@@ -47,7 +44,8 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--ink);min-heig
 .btn-primary:hover{background:#1d4bcf;}
 .btn-outline{background:transparent;border-color:var(--border);color:var(--ink2);}
 .btn-outline:hover{background:var(--surface2);color:var(--ink);}
-.btn-danger{background:var(--red-bg);color:var(--red);}
+.btn-danger{background:var(--red-bg);color:var(--red);border-color:transparent;}
+.btn-danger:hover{background:#f5d0cc;}
 .btn-sm{padding:5px 12px;font-size:13px;}
 .btn:disabled{opacity:0.4;cursor:not-allowed;}
 
@@ -57,23 +55,31 @@ input[type=text],input[type=url],select,textarea{
   border:1px solid var(--border);border-radius:var(--radius-sm);
   background:var(--surface);color:var(--ink);width:100%;outline:none;transition:border-color 0.15s;
 }
-input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(45,91,227,0.1);}
+textarea{resize:vertical;min-height:80px;}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(45,91,227,0.1);}
 .input-error{border-color:var(--red)!important;}
 
 /* BADGES */
 .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;}
-.badge-trust{background:#EEF2FD;color:#2D5BE3;}
-.badge-conflict{background:#FDF0E4;color:#B85E0A;}
-.badge-commitment{background:#E8F5EE;color:#1A7A4A;}
-.badge-accountability{background:#F5EEF8;color:#7D3C98;}
-.badge-results{background:#FCECEA;color:#C0392B;}
 
 /* ADMIN */
-.team-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin-bottom:1rem;}
-.team-chip{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--surface2);border-radius:var(--radius-sm);border:1px solid var(--border2);}
-.team-chip-name{font-size:14px;font-weight:500;}
-.team-chip-del{background:none;border:none;cursor:pointer;color:var(--ink3);font-size:18px;line-height:1;transition:color 0.15s;}
+.team-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:1rem;}
+.team-chip{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--surface2);border-radius:var(--radius-sm);border:1px solid var(--border2);transition:all 0.12s;cursor:pointer;}
+.team-chip.active{border-color:var(--accent);background:var(--accent-bg);}
+.team-chip-name{font-size:14px;font-weight:500;flex:1;}
+.team-chip-del{background:none;border:none;cursor:pointer;color:var(--ink3);font-size:18px;line-height:1;transition:color 0.15s;padding:0 0 0 6px;}
 .team-chip-del:hover{color:var(--red);}
+
+/* ROUNDS */
+.round-list{display:flex;flex-direction:column;gap:6px;margin-bottom:1rem;}
+.round-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--surface2);border-radius:var(--radius-sm);border:1px solid var(--border2);transition:all 0.12s;cursor:pointer;}
+.round-item.active{border-color:var(--accent);background:var(--accent-bg);}
+.round-item-label{font-size:14px;font-weight:500;flex:1;}
+.round-item-meta{font-size:12px;color:var(--ink3);margin-right:10px;}
+.round-item-del{background:none;border:none;cursor:pointer;color:var(--ink3);font-size:18px;line-height:1;transition:color 0.15s;}
+.round-item-del:hover{color:var(--red);}
+
+/* QUESTIONS */
 .q-filter{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;}
 .q-filter-btn{padding:4px 12px;border-radius:20px;border:1px solid var(--border);font-family:var(--font-body);font-size:12px;font-weight:500;background:var(--surface);color:var(--ink2);cursor:pointer;transition:all 0.15s;}
 .q-filter-btn.active{border-color:var(--accent);background:var(--accent-bg);color:var(--accent);}
@@ -107,6 +113,8 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(45
 .scale-btn.selected{background:var(--accent);border-color:var(--accent);color:#fff;}
 .scale-labels{display:flex;justify-content:space-between;margin-top:6px;}
 .scale-label{font-size:11px;color:var(--ink3);}
+.q-comment{margin-top:1.25rem;}
+.q-comment label{font-size:12px;font-weight:600;color:var(--ink3);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em;}
 .survey-nav{display:flex;justify-content:space-between;align-items:center;margin-top:1.5rem;}
 
 /* RESULTS */
@@ -128,7 +136,7 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(45
 .team-pill.compare{border-color:var(--amber);background:var(--amber-bg);color:var(--amber);}
 .responses-table{width:100%;border-collapse:collapse;font-size:13px;}
 .responses-table th{text-align:left;padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink3);border-bottom:1px solid var(--border);}
-.responses-table td{padding:10px 12px;border-bottom:1px solid var(--border2);}
+.responses-table td{padding:10px 12px;border-bottom:1px solid var(--border2);vertical-align:top;}
 .responses-table tr:last-child td{border-bottom:none;}
 .score-pill{display:inline-block;width:30px;text-align:center;padding:2px 0;border-radius:4px;font-weight:600;font-size:12px;}
 .score-5{background:#E8F5EE;color:#1A7A4A}.score-4{background:#EEF2FD;color:#2D5BE3}
@@ -139,7 +147,6 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(45
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
 .flex-1{flex:1;}
 .text-sm{font-size:13px;color:var(--ink2);}
-.text-xs{font-size:12px;color:var(--ink3);}
 .font-bold{font-weight:600;}
 .alert{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:1rem;}
 .alert-success{background:var(--green-bg);color:var(--green);border:1px solid rgba(26,122,74,0.2);}
@@ -150,12 +157,9 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(45
 .legend-item{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink2);}
 .legend-dot{width:12px;height:12px;border-radius:3px;}
 
-/* SQL block */
-.sql-block{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;font-family:monospace;font-size:12px;color:var(--ink);line-height:1.8;margin:0 0 1rem;overflow-x:auto;white-space:pre-wrap;position:relative;}
-
-/* PIN LOCK */
+/* PIN */
 .pin-overlay{position:fixed;inset:0;background:rgba(247,245,240,0.97);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;}
-.pin-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:2.5rem 2rem;box-shadow:var(--shadow-lg,0 8px 32px rgba(26,24,20,0.12));width:100%;max-width:360px;text-align:center;}
+.pin-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:2.5rem 2rem;box-shadow:0 8px 32px rgba(26,24,20,0.12);width:100%;max-width:360px;text-align:center;}
 .pin-icon{font-size:36px;margin-bottom:1rem;}
 .pin-title{font-family:var(--font-display);font-size:24px;margin-bottom:6px;}
 .pin-sub{color:var(--ink2);font-size:14px;margin-bottom:1.5rem;}
@@ -178,10 +182,10 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(45
 <nav class="nav">
   <div class="nav-logo">Team<span>Pulse</span></div>
   <div style="display:flex;align-items:center;gap:12px;">
-    <button id="admin-badge" class="pin-session-badge" style="display:none" onclick="lockAdmin()" title="Click to lock">🔓 Admin</button>
-    <div class="nav-tabs" id="nav-tabs">
-      <button class="nav-tab active" onclick="showPageGuarded('admin')">Admin</button>
-      <button class="nav-tab" onclick="showPage('survey')">Survey</button>
+    <button id="admin-badge" class="pin-session-badge" style="display:none" onclick="lockAdmin()" title="Click to lock">&#128275; Admin</button>
+    <div class="nav-tabs">
+      <button class="nav-tab" onclick="showPageGuarded('admin')">Admin</button>
+      <button class="nav-tab active" onclick="showPage('survey')">Survey</button>
       <button class="nav-tab" onclick="showPageGuarded('results')">Results</button>
     </div>
   </div>
@@ -190,14 +194,12 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(45
 <!-- PIN OVERLAY -->
 <div id="pin-overlay" class="pin-overlay" style="display:none">
   <div class="pin-box">
-    <div class="pin-icon">🔒</div>
+    <div class="pin-icon">&#128274;</div>
     <div class="pin-title" id="pin-title">Admin access</div>
-    <div class="pin-sub" id="pin-sub">Enter your admin PIN to continue.</div>
-    <div class="pin-dots" id="pin-dots">
-      <div class="pin-dot" id="pd0"></div>
-      <div class="pin-dot" id="pd1"></div>
-      <div class="pin-dot" id="pd2"></div>
-      <div class="pin-dot" id="pd3"></div>
+    <div class="pin-sub">Enter your 4-digit admin PIN.</div>
+    <div class="pin-dots">
+      <div class="pin-dot" id="pd0"></div><div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div><div class="pin-dot" id="pd3"></div>
     </div>
     <div class="pin-keypad">
       <button class="pin-key" onclick="pinKey('1')">1</button>
@@ -211,7 +213,7 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(45
       <button class="pin-key" onclick="pinKey('9')">9</button>
       <button class="pin-key" onclick="pinKey('')"></button>
       <button class="pin-key" onclick="pinKey('0')">0</button>
-      <button class="pin-key del" onclick="pinKey('del')">⌫</button>
+      <button class="pin-key del" onclick="pinKey('del')">&#9003;</button>
     </div>
     <div class="pin-err" id="pin-err"></div>
     <div style="margin-top:1rem">
@@ -223,58 +225,63 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(45
   </div>
 </div>
 
-
 <!-- ADMIN PAGE -->
 <div id="page-admin" class="page">
   <div class="page-title">Admin panel</div>
-  <div class="page-sub">Each team has its own question set and shareable link.</div>
+  <div class="page-sub">Manage teams, rounds, and question sets.</div>
 
   <div class="card">
     <div class="card-title">Teams</div>
-    <div class="team-list" id="team-list"><div class="text-sm" style="color:var(--ink3)">Loading…</div></div>
+    <div class="team-list" id="team-list"><div class="text-sm" style="color:var(--ink3)">Loading...</div></div>
     <div class="row">
-      <input type="text" id="new-team" placeholder="New team name…" style="max-width:260px" onkeydown="if(event.key==='Enter')addTeam()">
-      <button class="btn btn-outline btn-sm" onclick="addTeam()">+ Add</button>
+      <input type="text" id="new-team" placeholder="New team name..." style="max-width:260px" onkeydown="if(event.key==='Enter')addTeam()">
+      <button class="btn btn-outline btn-sm" onclick="addTeam()">+ Add team</button>
     </div>
   </div>
 
-  <div class="card mt" id="team-qs-card" style="display:none">
+  <div class="card mt" id="rounds-card" style="display:none">
+    <div class="card-title">Rounds &mdash; <span id="rounds-team-name" style="color:var(--accent)"></span></div>
+    <div class="round-list" id="round-list"></div>
+    <div class="row">
+      <input type="text" id="new-round" placeholder="Round label (e.g. Round 1, Q1 2025)..." style="max-width:320px" onkeydown="if(event.key==='Enter')addRound()">
+      <button class="btn btn-outline btn-sm" onclick="addRound()">+ Add round</button>
+    </div>
+  </div>
+
+  <div class="card mt" id="round-qs-card" style="display:none">
     <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
-      <span>Question set for: <span id="active-team-name" style="color:var(--accent)"></span></span>
+      <span>Questions &mdash; <span id="round-qs-label" style="color:var(--accent)"></span></span>
       <span id="sel-count" style="font-size:12px;color:var(--ink3);font-weight:400"></span>
     </div>
     <div class="row" style="margin-bottom:10px">
       <button class="btn btn-outline btn-sm" onclick="selectAll()">All</button>
       <button class="btn btn-outline btn-sm" onclick="clearAll()">None</button>
       <div class="flex-1"></div>
-      <button class="btn btn-primary btn-sm" onclick="saveTeamQs()" id="save-qs-btn">Save questions</button>
+      <button class="btn btn-primary btn-sm" onclick="saveRoundQs()" id="save-qs-btn">Save questions</button>
     </div>
     <div class="q-filter">
       <button class="q-filter-btn active" onclick="filterCat(this,'all')">All</button>
       <button class="q-filter-btn" onclick="filterCat(this,'Confiance')">Trust</button>
       <button class="q-filter-btn" onclick="filterCat(this,'Conflit')">Conflict</button>
       <button class="q-filter-btn" onclick="filterCat(this,'Engagement')">Commitment</button>
-      <button class="q-filter-btn" onclick="filterCat(this,'Responsabilité')">Accountability</button>
-      <button class="q-filter-btn" onclick="filterCat(this,'Résultats')">Results</button>
+      <button class="q-filter-btn" onclick="filterCat(this,'Responsabilite')">Accountability</button>
+      <button class="q-filter-btn" onclick="filterCat(this,'Resultats')">Results</button>
     </div>
     <div class="q-list" id="q-list"></div>
   </div>
 
-  <div class="card mt" id="team-link-card" style="display:none">
-    <div class="card-title">Survey link for: <span id="link-team-name" style="color:var(--accent)"></span></div>
-    <div class="text-sm" style="margin-bottom:10px">Send this link to team members. It opens the survey pre-set for this team — no login needed.</div>
+  <div class="card mt" id="round-link-card" style="display:none">
+    <div class="card-title">Survey link &mdash; <span id="link-round-label" style="color:var(--accent)"></span></div>
+    <div class="text-sm" style="margin-bottom:10px">Send this link to team members. It opens the survey pre-configured for this round.</div>
     <div class="link-box">
       <span class="link-url" id="share-url">—</span>
       <button class="btn btn-outline btn-sm" onclick="copyShare(this)">Copy</button>
-    </div>
-    <div style="margin-top:1rem">
-      <button class="btn btn-primary btn-sm" onclick="previewTeamSurvey()">Preview survey →</button>
     </div>
   </div>
 
   <div class="card mt">
     <div class="card-title">Admin PIN</div>
-    <div class="text-sm" style="margin-bottom:12px">Default PIN is <strong>1234</strong>. Change it here. Survey respondents are never asked for a PIN.</div>
+    <div class="text-sm" style="margin-bottom:12px">Default PIN is <strong>1234</strong>. Change it here.</div>
     <div id="pin-status-box"></div>
     <div id="pin-set-form">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:320px;margin-bottom:10px">
@@ -299,7 +306,7 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(45
     <div class="survey-header">
       <div class="survey-logo">Team<span>Pulse</span></div>
       <div class="survey-title">Team Health Assessment</div>
-      <div class="survey-desc">Based on the Five Dysfunctions of a Team — Patrick Lencioni.<br>Rate each statement honestly from 1 (Never) to 5 (Always).</div>
+      <div class="survey-desc">Based on the Five Dysfunctions of a Team &mdash; Patrick Lencioni.<br>Rate each statement honestly from 1 (Never) to 5 (Always).</div>
     </div>
     <div id="survey-body"></div>
   </div>
@@ -308,7 +315,7 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(45
 <!-- RESULTS PAGE -->
 <div id="page-results" class="page">
   <div class="page-title">Results dashboard</div>
-  <div class="page-sub">Live from Supabase — visible across all devices.</div>
+  <div class="page-sub">Browse results by team and round.</div>
   <div id="results-body"></div>
 </div>
 
@@ -317,322 +324,299 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(45
 const Qs=[
   {n:1,text:"Team members readily admit they are wrong.",cat:"Confiance"},
   {n:2,text:"Team members are passionate and feel free to participate in team discussions.",cat:"Conflit"},
-  {n:3,text:"Team members are quick to point out colleagues who have contributed to the team.",cat:"Résultats"},
+  {n:3,text:"Team members are quick to point out colleagues who have contributed to the team.",cat:"Resultats"},
   {n:4,text:"Team meetings are interesting and exciting (not boring).",cat:"Conflit"},
   {n:5,text:"During team meetings, the most important and difficult items on the agenda are discussed.",cat:"Conflit"},
   {n:6,text:"Team members discuss each other's personal tasks.",cat:"Confiance"},
   {n:7,text:"Team members give their opinions, even if this may lead to disagreements.",cat:"Conflit"},
-  {n:8,text:"Team members identify each other's unproductive behavior.",cat:"Responsabilité"},
-  {n:9,text:"The team regularly achieves its objectives.",cat:"Résultats"},
+  {n:8,text:"Team members identify each other's unproductive behavior.",cat:"Responsabilite"},
+  {n:9,text:"The team regularly achieves its objectives.",cat:"Resultats"},
   {n:10,text:"Team members ask for help without hesitation.",cat:"Confiance"},
   {n:11,text:"Team members leave the meeting knowing that everyone is committed to the agreements reached.",cat:"Engagement"},
   {n:12,text:"During discussions, team members challenge each other to explain how they arrived at certain conclusions and opinions.",cat:"Conflit"},
   {n:13,text:"Team members ask each other to intervene in the areas for which they are responsible.",cat:"Confiance"},
-  {n:14,text:"When the team fails to achieve common goals, each team member takes personal responsibility for improving performance.",cat:"Résultats"},
-  {n:15,text:"Team members sometimes make voluntary sacrifices in the interests of the team.",cat:"Résultats"},
-  {n:16,text:"Team members confront their colleagues with difficult situations in the respective areas for which others are responsible.",cat:"Responsabilité"},
+  {n:14,text:"When the team fails to achieve common goals, each team member takes personal responsibility for improving performance.",cat:"Resultats"},
+  {n:15,text:"Team members sometimes make voluntary sacrifices in the interests of the team.",cat:"Resultats"},
+  {n:16,text:"Team members confront their colleagues with difficult situations in the respective areas for which others are responsible.",cat:"Responsabilite"},
   {n:17,text:"Team members recognize and utilize each other's skills and expertise.",cat:"Confiance"},
   {n:18,text:"Team members seek the opinion of other team members during meetings.",cat:"Conflit"},
   {n:19,text:"Team members end meetings with clear, precise proposals and action points.",cat:"Engagement"},
-  {n:20,text:"Team members ask each other about their current strategies and methods.",cat:"Responsabilité"},
-  {n:21,text:"Team members ensure that under-performers feel sufficient pressure to know that improvements are expected.",cat:"Responsabilité"},
+  {n:20,text:"Team members ask each other about their current strategies and methods.",cat:"Responsabilite"},
+  {n:21,text:"Team members ensure that under-performers feel sufficient pressure to know that improvements are expected.",cat:"Responsabilite"},
   {n:22,text:"Team members can easily apologize to each other.",cat:"Confiance"},
   {n:23,text:"Team members also bring unpopular viewpoints to the fore.",cat:"Conflit"},
   {n:24,text:"The team is clear about its objectives and priorities.",cat:"Engagement"},
-  {n:25,text:"Team members are modest about their own contributions.",cat:"Résultats"},
-  {n:26,text:"All team members are evaluated according to the same high standards.",cat:"Responsabilité"},
+  {n:25,text:"Team members are modest about their own contributions.",cat:"Resultats"},
+  {n:26,text:"All team members are evaluated according to the same high standards.",cat:"Responsabilite"},
   {n:27,text:"In the event of conflict, the team confronts the issue and deals with it in depth before moving on.",cat:"Conflit"},
   {n:28,text:"The whole team stands behind common objectives.",cat:"Engagement"},
   {n:29,text:"The team makes decisions, even if all the information is not available.",cat:"Engagement"},
-  {n:30,text:"Team members value collective success over individual performance.",cat:"Résultats"},
+  {n:30,text:"Team members value collective success over individual performance.",cat:"Resultats"},
   {n:31,text:"Team members are direct and honest with each other.",cat:"Confiance"},
   {n:32,text:"Team members talk freely about their private lives.",cat:"Confiance"},
   {n:33,text:"The team sticks to decisions.",cat:"Engagement"},
-  {n:34,text:"Team members keep promises and agreements.",cat:"Responsabilité"},
-  {n:35,text:"Team members give each other constructive, unsolicited feedback.",cat:"Responsabilité"},
-  {n:36,text:"Team members attach little importance to titles or status.",cat:"Résultats"},
+  {n:34,text:"Team members keep promises and agreements.",cat:"Responsabilite"},
+  {n:35,text:"Team members give each other constructive, unsolicited feedback.",cat:"Responsabilite"},
+  {n:36,text:"Team members attach little importance to titles or status.",cat:"Resultats"},
   {n:37,text:"Team members support group decisions, even if they don't agree with them at first.",cat:"Engagement"},
 ];
-const CAT={Confiance:"Trust",Conflit:"Conflict",Engagement:"Commitment",Responsabilité:"Accountability",Résultats:"Results"};
-const COL={Confiance:"#2D5BE3",Conflit:"#E8820A",Engagement:"#1A7A4A",Responsabilité:"#8E44AD",Résultats:"#C0392B"};
-const BC={Confiance:"badge-trust",Conflit:"badge-conflict",Engagement:"badge-commitment",Responsabilité:"badge-accountability",Résultats:"badge-results"};
+const CAT={Confiance:"Trust",Conflit:"Conflict",Engagement:"Commitment",Responsabilite:"Accountability",Resultats:"Results"};
+const COL={Confiance:"#2D5BE3",Conflit:"#E8820A",Engagement:"#1A7A4A",Responsabilite:"#8E44AD",Resultats:"#C0392B"};
+
+// ── Config ─────────────────────────────────────────────────────────────────
+const SB  = 'https://ocqvjzsogumonagjltli.supabase.co';
+const KEY = 'sb_publishable_3gruS1_em-wR3U60raWakA_Yr-5MiOZ';
 
 // ── State ──────────────────────────────────────────────────────────────────
-// ╔══════════════════════════════════════════════════════════════╗
-// ║  CONFIGURATION — edit these two lines, nothing else needed  ║
-// ╚══════════════════════════════════════════════════════════════╝
-const SB  = 'https://ocqvjzsogumonagjltli.supabase.co'; // your Supabase project URL
-const KEY = 'sb_publishable_3gruS1_em-wR3U60raWakA_Yr-5MiOZ';               // your Supabase anon/public key
 let teams=[];
-let teamQs={};        // {teamId: Set of question numbers}
-let activeTeamId=null; // team being edited in admin
-let selQs=new Set(Qs.map(q=>q.n)); // current editing set (for active team)
+let rounds=[];
+let activeTeamId=null;
+let activeRoundId=null;
+let selQs=new Set();
 let catF='all';
-let sv={team:null,answers:{},step:0};
-let rTeam=null, cTeam=null, allResp=[];
-let svPreselectedTeam=null; // team pre-selected via share link
+let sv={round:null,firstName:'',lastName:'',answers:{},step:0};
+let allResponses=[];
+let rTeamId=null,rRoundId=null,cRoundId=null;
 
-// ── PIN state ──────────────────────────────────────────────────────────────
-let pinEntry='';
-let pinTarget=null;   // page to open after successful PIN
-let adminUnlocked=false;
+// PIN state
+let pinEntry='',pinTarget=null,adminUnlocked=false;
 const PIN_KEY='tp_pin';
+const DEFAULT_PIN_HASH=String(('1234').split('').reduce((h,c)=>{h=(h<<5)-h+c.charCodeAt(0);return h|0;},0));
+function getStoredPin(){return localStorage.getItem(PIN_KEY)||DEFAULT_PIN_HASH;}
+function hashPin(p){let h=0;for(let i=0;i<p.length;i++){h=(h<<5)-h+p.charCodeAt(i);h|=0;}return String(h);}
 
-const DEFAULT_PIN_HASH = String(('1234').split('').reduce((h,c)=>{h=(h<<5)-h+c.charCodeAt(0);return h|0;},0));
-function getStoredPin(){ return localStorage.getItem(PIN_KEY)||DEFAULT_PIN_HASH; }
-function hashPin(p){ let h=0; for(let i=0;i<p.length;i++){h=(h<<5)-h+p.charCodeAt(i);h|=0;} return String(h); }
-
+// ── PIN ────────────────────────────────────────────────────────────────────
 function showPageGuarded(p){
-  const pin=getStoredPin();
-  if(!pin){ showPage(p); return; }          // no PIN set → open freely
-  if(adminUnlocked){ showPage(p); return; } // already authenticated this session
-  pinTarget=p;
-  openPinOverlay();
-}
-
-function openPinOverlay(){
-  pinEntry='';
+  if(adminUnlocked){showPage(p);return;}
+  pinTarget=p;pinEntry='';
   document.getElementById('pin-err').textContent='';
-  document.getElementById('pin-title').textContent=pinTarget==='results'?'Results access':'Admin access';
-  document.getElementById('pin-sub').textContent='Enter your 4-digit admin PIN.';
+  document.getElementById('pin-title').textContent=p==='results'?'Results access':'Admin access';
   updatePinDots();
   document.getElementById('pin-overlay').style.display='flex';
 }
-
-function cancelPin(){
-  document.getElementById('pin-overlay').style.display='none';
-  pinEntry=''; pinTarget=null;
-}
-
+function cancelPin(){document.getElementById('pin-overlay').style.display='none';pinEntry='';pinTarget=null;}
 function pinKey(k){
-  if(k===''||k===undefined) return;
-  if(k==='del'){ pinEntry=pinEntry.slice(0,-1); updatePinDots(); return; }
-  if(pinEntry.length>=4) return;
-  pinEntry+=k;
-  updatePinDots();
-  if(pinEntry.length===4) setTimeout(checkPin,120);
+  if(k===''||k===undefined)return;
+  if(k==='del'){pinEntry=pinEntry.slice(0,-1);updatePinDots();return;}
+  if(pinEntry.length>=4)return;
+  pinEntry+=k;updatePinDots();
+  if(pinEntry.length===4)setTimeout(checkPin,120);
 }
-
 function updatePinDots(err=false){
   for(let i=0;i<4;i++){
     const d=document.getElementById('pd'+i);
     d.className='pin-dot'+(err?' error':pinEntry.length>i?' filled':'');
   }
 }
-
 function checkPin(){
-  const stored=getStoredPin();
-  if(hashPin(pinEntry)===stored){
+  if(hashPin(pinEntry)===getStoredPin()){
     adminUnlocked=true;
     document.getElementById('pin-overlay').style.display='none';
     document.getElementById('admin-badge').style.display='flex';
-    const dest=pinTarget; pinEntry=''; pinTarget=null;
+    const dest=pinTarget;pinEntry='';pinTarget=null;
     showPage(dest);
   } else {
     updatePinDots(true);
     document.getElementById('pin-err').textContent='Incorrect PIN. Try again.';
-    setTimeout(()=>{ pinEntry=''; updatePinDots(); document.getElementById('pin-err').textContent=''; },900);
+    setTimeout(()=>{pinEntry='';updatePinDots();document.getElementById('pin-err').textContent='';},900);
   }
 }
-
 function lockAdmin(){
   adminUnlocked=false;
   document.getElementById('admin-badge').style.display='none';
   showPage('survey');
 }
-
 function savePin(){
   const a=document.getElementById('pin-a').value.trim();
   const b=document.getElementById('pin-b').value.trim();
   const errEl=document.getElementById('pin-set-err');
   errEl.style.display='none';
-  if(!/^\d{4}$/.test(a)){ errEl.textContent='PIN must be exactly 4 digits.'; errEl.style.display='block'; return; }
-  if(a!==b){ errEl.textContent='PINs do not match.'; errEl.style.display='block'; return; }
-  localStorage.setItem(PIN_KEY, hashPin(a));
-  document.getElementById('pin-a').value='';
-  document.getElementById('pin-b').value='';
-  adminUnlocked=true;
+  if(!/^\d{4}$/.test(a)){errEl.textContent='PIN must be exactly 4 digits.';errEl.style.display='block';return;}
+  if(a!==b){errEl.textContent='PINs do not match.';errEl.style.display='block';return;}
+  localStorage.setItem(PIN_KEY,hashPin(a));
+  document.getElementById('pin-a').value='';document.getElementById('pin-b').value='';
   renderPinStatus();
 }
-
 function clearPin(){
-  if(!confirm('Remove the admin PIN? Admin and Results will be accessible to anyone.')) return;
+  if(!confirm('Remove the admin PIN?'))return;
   localStorage.removeItem(PIN_KEY);
   adminUnlocked=false;
   document.getElementById('admin-badge').style.display='none';
   renderPinStatus();
 }
-
 function renderPinStatus(){
-  const box=document.getElementById('pin-status-box');
-  const form=document.getElementById('pin-set-form');
-  if(getStoredPin()){
-    box.innerHTML=`<div class="alert alert-success" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <span>🔒 PIN is set. Admin &amp; Results are protected.</span>
-      <button class="btn btn-outline btn-sm" onclick="clearPin()">Remove PIN</button>
-    </div>`;
-    form.querySelector('label').closest('div').parentElement.querySelector('label:first-child') // reset labels
-    form.style.display='block';
-    form.querySelector('.btn').textContent='Change PIN';
-  } else {
-    box.innerHTML=`<div class="alert alert-info" style="margin-bottom:10px">No PIN set — Admin and Results are currently open to anyone who has the app URL.</div>`;
-    form.style.display='block';
-    form.querySelector('.btn').textContent='Set PIN';
-  }
+  document.getElementById('pin-status-box').innerHTML=getStoredPin()
+    ?`<div class="alert alert-success" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><span>&#128274; PIN is set.</span><button class="btn btn-outline btn-sm" onclick="clearPin()">Remove PIN</button></div>`
+    :`<div class="alert alert-info" style="margin-bottom:10px">No PIN set — Admin and Results are open to anyone with the URL.</div>`;
 }
 
-// ── Supabase helpers ───────────────────────────────────────────────────────
+// ── Supabase ───────────────────────────────────────────────────────────────
 async function api(path,opts={}){
-  // Support both legacy JWT keys (eyJ...) and new sb_publishable keys
-  const authHeader = KEY.startsWith('eyJ') ? {'Authorization': 'Bearer '+KEY} : {};
   const r=await fetch(SB+'/rest/v1/'+path,{
     ...opts,
-    headers:{'apikey':KEY,...authHeader,'Content-Type':'application/json','Prefer':opts.prefer||'return=representation',...(opts.headers||{})}
+    headers:{'apikey':KEY,'Content-Type':'application/json','Prefer':opts.prefer||'return=representation',...(opts.headers||{})}
   });
   if(!r.ok)throw new Error(await r.text());
-  const t=await r.text(); return t?JSON.parse(t):null;
+  const t=await r.text();return t?JSON.parse(t):null;
 }
 const getTeams=()=>api('teams?select=*&order=created_at.asc');
-const addTeamDB=n=>api('teams',{method:'POST',body:JSON.stringify({name:n,questions:JSON.stringify([...Array.from({length:37},(_,i)=>i+1)])})});
-const updateTeamQs=(id,qs)=>api('teams?id=eq.'+id,{method:'PATCH',body:JSON.stringify({questions:JSON.stringify([...qs])})});
+const addTeamDB=n=>api('teams',{method:'POST',body:JSON.stringify({name:n})});
 const delTeamDB=id=>api('teams?id=eq.'+id,{method:'DELETE',prefer:''});
-const saveResp=(tid,tn,ans)=>api('responses',{method:'POST',body:JSON.stringify({team_id:tid,team_name:tn,answers:ans})});
-const getResp=()=>api('responses?select=*&order=submitted_at.desc');
-
-// ── Admin ──────────────────────────────────────────────────────────────────
-async function boot(){
-  await loadTeams();
-  renderPinStatus();
-  if(!getStoredPin()) adminUnlocked=true;
-
-  // handle ?team=X&qs=1,2,3 share links — go straight to survey
-  const params=new URLSearchParams(location.search);
-  if(params.get('team')||params.get('qs')){
-    const teamName=params.get('team');
-    const qsParam=params.get('qs');
-    // pre-select the team if it matches
-    if(teamName){
-      const t=teams.find(t=>t.name===teamName);
-      if(t){
-        svPreselectedTeam={id:t.id,name:t.name};
-        if(qsParam) selQs=new Set(qsParam.split(',').map(Number).filter(Boolean));
-        else try{selQs=new Set(JSON.parse(t.questions||'[]').map(Number));}catch(e){}
-      }
-    } else if(qsParam){
-      selQs=new Set(qsParam.split(',').map(Number).filter(Boolean));
-    }
-    loadQList();
-    showPage('survey');
-    return;
-  }
-
-  loadQList();
-  showPage('survey');
-  if(adminUnlocked) document.getElementById('admin-badge').style.display='flex';
-}
-
+const getRounds=()=>api('rounds?select=*,teams(name)&order=created_at.asc');
+const addRoundDB=(teamId,label)=>api('rounds',{method:'POST',body:JSON.stringify({team_id:teamId,label,questions:JSON.stringify(Array.from({length:37},(_,i)=>i+1))})});
+const updateRoundQs=(id,qs)=>api('rounds?id=eq.'+id,{method:'PATCH',body:JSON.stringify({questions:JSON.stringify([...qs])})});
+const delRoundDB=id=>api('rounds?id=eq.'+id,{method:'DELETE',prefer:''});
+const getRoundById=id=>api('rounds?id=eq.'+id+'&select=*,teams(name)');
+const saveResp=(roundId,firstName,lastName,answers)=>api('responses',{method:'POST',body:JSON.stringify({round_id:roundId,first_name:firstName,last_name:lastName,answers})});
+const getResponses=()=>api('responses?select=*,rounds(id,label,team_id,teams(name))&order=submitted_at.desc');
 
 // ── Nav ────────────────────────────────────────────────────────────────────
 function showPage(p){
   document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(e=>e.classList.remove('active'));
   document.getElementById('page-'+p).classList.add('active');
-  document.querySelectorAll('.nav-tab').forEach(e=>{if(e.textContent.toLowerCase().trim()===p)e.classList.add('active');});
+  document.querySelectorAll('.nav-tab').forEach(e=>{if(e.textContent.trim().toLowerCase()===p)e.classList.add('active');});
   if(p==='survey')renderSurvey();
   if(p==='results')fetchResults();
 }
 
-// ── Admin ──────────────────────────────────────────────────────────────────
-async function loadTeams(){
-  try{
-    teams=await getTeams();
-    teams.forEach(t=>{
-      try{ teamQs[t.id]=new Set(JSON.parse(t.questions||'[]').map(Number)); }
-      catch(e){ teamQs[t.id]=new Set(Qs.map(q=>q.n)); }
-    });
-    renderTeams();
+// ── Boot ───────────────────────────────────────────────────────────────────
+async function boot(){
+  renderPinStatus();
+  if(!getStoredPin())adminUnlocked=true;
+  if(adminUnlocked)document.getElementById('admin-badge').style.display='flex';
+  await loadAll();
+
+  const params=new URLSearchParams(location.search);
+  const roundParam=params.get('round');
+  if(roundParam){
+    try{
+      const res=await getRoundById(roundParam);
+      if(res&&res.length){
+        const r=res[0];
+        sv={
+          round:{id:r.id,label:r.label,teamName:r.teams?r.teams.name:'',questions:JSON.parse(r.questions||'[]')},
+          firstName:'',lastName:'',answers:{},step:-1
+        };
+        showPage('survey');return;
+      }
+    }catch(e){console.error('Could not load round:',e);}
   }
-  catch(e){ document.getElementById('team-list').innerHTML='<div class="alert alert-error">Failed to load teams.</div>'; }
+  showPage('survey');
 }
+
+// ── Admin: load ────────────────────────────────────────────────────────────
+async function loadAll(){
+  try{
+    [teams,rounds]=await Promise.all([getTeams(),getRounds()]);
+    renderTeams();
+  }catch(e){
+    document.getElementById('team-list').innerHTML='<div class="alert alert-error">Failed to load data.</div>';
+  }
+}
+
+// ── Admin: Teams ───────────────────────────────────────────────────────────
 function renderTeams(){
   const el=document.getElementById('team-list');
   if(!teams.length){el.innerHTML='<div class="text-sm" style="color:var(--ink3)">No teams yet.</div>';return;}
   el.innerHTML=teams.map(t=>`
-    <div class="team-chip ${t.id===activeTeamId?'selected':''}" style="${t.id===activeTeamId?'border-color:var(--accent);background:var(--accent-bg);':''}" >
-      <span class="team-chip-name" style="cursor:pointer" onclick="selectTeam('${t.id}')">${t.name}</span>
-      <div style="display:flex;gap:4px;align-items:center">
-        <button class="btn btn-outline btn-sm" style="padding:2px 8px;font-size:11px" onclick="selectTeam('${t.id}')">Edit</button>
-        <button class="team-chip-del" onclick="rmTeam('${t.id}','${t.name}')">×</button>
-      </div>
+    <div class="team-chip ${t.id===activeTeamId?'active':''}" onclick="selectTeam('${t.id}')">
+      <span class="team-chip-name">${t.name}</span>
+      <button class="team-chip-del" onclick="event.stopPropagation();rmTeam('${t.id}','${t.name}')">x</button>
     </div>`).join('');
 }
 function selectTeam(id){
-  activeTeamId=id;
+  activeTeamId=id;activeRoundId=null;
   const t=teams.find(t=>t.id===id);
-  if(!t)return;
-  // load this team's questions
-  try{ selQs=new Set(JSON.parse(t.questions||'[]').map(Number)); }
-  catch(e){ selQs=new Set(Qs.map(q=>q.n)); }
-  teamQs[id]=new Set(selQs);
-  document.getElementById('active-team-name').textContent=t.name;
-  document.getElementById('link-team-name').textContent=t.name;
-  document.getElementById('team-qs-card').style.display='block';
-  document.getElementById('team-link-card').style.display='block';
-  catF='all';
-  document.querySelectorAll('.q-filter-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
-  loadQList();
-  renderShareUrl();
-  renderTeams();
-}
-async function saveTeamQs(){
-  if(!activeTeamId)return;
-  const btn=document.getElementById('save-qs-btn');
-  btn.disabled=true; btn.textContent='Saving…';
-  try{
-    await updateTeamQs(activeTeamId, selQs);
-    teamQs[activeTeamId]=new Set(selQs);
-    // update local cache
-    const t=teams.find(t=>t.id===activeTeamId);
-    if(t) t.questions=JSON.stringify([...selQs]);
-    btn.textContent='Saved ✓';
-    setTimeout(()=>{btn.disabled=false;btn.textContent='Save questions';},1500);
-  }catch(e){
-    btn.disabled=false; btn.textContent='Save questions';
-    alert('Could not save: '+e.message);
-  }
+  document.getElementById('rounds-team-name').textContent=t?t.name:'';
+  document.getElementById('rounds-card').style.display='block';
+  document.getElementById('round-qs-card').style.display='none';
+  document.getElementById('round-link-card').style.display='none';
+  renderTeams();renderRounds();
 }
 async function addTeam(){
-  const inp=document.getElementById('new-team'), name=inp.value.trim();
+  const inp=document.getElementById('new-team'),name=inp.value.trim();
   if(!name)return;
   if(teams.find(t=>t.name===name)){inp.classList.add('input-error');setTimeout(()=>inp.classList.remove('input-error'),1500);return;}
-  try{
-    const res=await addTeamDB(name);
-    inp.value='';
-    await loadTeams();
-    // auto-select newly created team
-    const newT=teams.find(t=>t.name===name);
-    if(newT) selectTeam(newT.id);
-  }catch(e){alert('Could not add team.');}
+  try{await addTeamDB(name);inp.value='';await loadAll();}
+  catch(e){alert('Could not add team.');}
 }
 async function rmTeam(id,name){
-  if(!confirm('Remove team "'+name+'" and all its responses?'))return;
-  try{await delTeamDB(id);await loadTeams();}catch(e){alert('Could not remove team.');}
+  if(!confirm('Remove team "'+name+'" and all its rounds and responses?'))return;
+  try{
+    await delTeamDB(id);
+    if(activeTeamId===id){activeTeamId=null;activeRoundId=null;document.getElementById('rounds-card').style.display='none';document.getElementById('round-qs-card').style.display='none';document.getElementById('round-link-card').style.display='none';}
+    await loadAll();
+  }catch(e){alert('Could not remove team.');}
+}
+
+// ── Admin: Rounds ──────────────────────────────────────────────────────────
+function renderRounds(){
+  const el=document.getElementById('round-list');
+  const tr=rounds.filter(r=>r.team_id===activeTeamId);
+  if(!tr.length){el.innerHTML='<div class="text-sm" style="color:var(--ink3);margin-bottom:8px">No rounds yet.</div>';return;}
+  el.innerHTML=tr.map(r=>`
+    <div class="round-item ${r.id===activeRoundId?'active':''}" onclick="selectRound('${r.id}')">
+      <span class="round-item-label">${r.label}</span>
+      <span class="round-item-meta">${JSON.parse(r.questions||'[]').length} questions</span>
+      <button class="round-item-del" onclick="event.stopPropagation();rmRound('${r.id}','${r.label}')">x</button>
+    </div>`).join('');
+}
+function selectRound(id){
+  activeRoundId=id;
+  const r=rounds.find(r=>r.id===id);
+  if(!r)return;
+  try{selQs=new Set(JSON.parse(r.questions||'[]').map(Number));}
+  catch(e){selQs=new Set(Qs.map(q=>q.n));}
+  document.getElementById('round-qs-label').textContent=r.label;
+  document.getElementById('link-round-label').textContent=r.label;
+  document.getElementById('round-qs-card').style.display='block';
+  document.getElementById('round-link-card').style.display='block';
+  catF='all';
+  document.querySelectorAll('.q-filter-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+  loadQList();renderShareUrl();renderRounds();
+}
+async function addRound(){
+  const inp=document.getElementById('new-round'),label=inp.value.trim();
+  if(!label||!activeTeamId)return;
+  try{
+    await addRoundDB(activeTeamId,label);
+    inp.value='';await loadAll();
+    const newR=rounds.find(r=>r.team_id===activeTeamId&&r.label===label);
+    if(newR)selectRound(newR.id);
+  }catch(e){alert('Could not add round.');}
+}
+async function rmRound(id,label){
+  if(!confirm('Remove round "'+label+'" and all its responses?'))return;
+  try{
+    await delRoundDB(id);
+    if(activeRoundId===id){activeRoundId=null;document.getElementById('round-qs-card').style.display='none';document.getElementById('round-link-card').style.display='none';}
+    await loadAll();renderRounds();
+  }catch(e){alert('Could not remove round.');}
+}
+async function saveRoundQs(){
+  if(!activeRoundId)return;
+  const btn=document.getElementById('save-qs-btn');
+  btn.disabled=true;btn.textContent='Saving...';
+  try{
+    await updateRoundQs(activeRoundId,selQs);
+    const r=rounds.find(r=>r.id===activeRoundId);
+    if(r)r.questions=JSON.stringify([...selQs]);
+    renderRounds();
+    btn.textContent='Saved!';
+    setTimeout(()=>{btn.disabled=false;btn.textContent='Save questions';},1500);
+  }catch(e){btn.disabled=false;btn.textContent='Save questions';alert('Could not save: '+e.message);}
 }
 function renderShareUrl(){
-  if(!activeTeamId)return;
-  const t=teams.find(t=>t.id===activeTeamId);
-  const base=location.origin+location.pathname;
-  document.getElementById('share-url').textContent=base+'?team='+encodeURIComponent(t?t.name:'')+'&qs='+[...selQs].join(',');
-}
-function previewTeamSurvey(){
-  if(!activeTeamId)return;
-  const t=teams.find(t=>t.id===activeTeamId);
-  if(t){ sv={team:null,answers:{},step:0}; showPage('survey'); }
+  if(!activeRoundId)return;
+  document.getElementById('share-url').textContent=location.origin+location.pathname+'?round='+activeRoundId;
 }
 function copyShare(btn){
   navigator.clipboard.writeText(document.getElementById('share-url').textContent);
-  btn.textContent='Copied!'; setTimeout(()=>btn.textContent='Copy',2000);
+  btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);
 }
+
+// ── Admin: Questions ───────────────────────────────────────────────────────
 function loadQList(){
   const qs=catF==='all'?Qs:Qs.filter(q=>q.cat===catF);
   document.getElementById('q-list').innerHTML=qs.map(q=>`
@@ -640,124 +624,167 @@ function loadQList(){
       <div class="q-check">${selQs.has(q.n)?'<svg style="width:8px;height:8px" viewBox="0 0 8 8"><polyline points="1,4 3.5,6.5 7,2" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>':''}</div>
       <span class="q-num">${q.n}</span>
       <span class="q-text">${q.text}</span>
-      <span class="badge ${BC[q.cat]}">${CAT[q.cat]}</span>
     </div>`).join('');
-  document.getElementById('sel-count').textContent=selQs.size;
+  document.getElementById('sel-count').textContent=selQs.size+' selected';
 }
-function togQ(n){selQs.has(n)?selQs.delete(n):selQs.add(n);loadQList();renderShareUrl();}
-function selectAll(){selQs=new Set(Qs.map(q=>q.n));loadQList();renderShareUrl();}
-function clearAll(){selQs.clear();loadQList();renderShareUrl();}
+function togQ(n){selQs.has(n)?selQs.delete(n):selQs.add(n);loadQList();}
+function selectAll(){selQs=new Set(Qs.map(q=>q.n));loadQList();}
+function clearAll(){selQs.clear();loadQList();}
 function filterCat(btn,cat){
   catF=cat;
   document.querySelectorAll('.q-filter-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active'); loadQList();
+  btn.classList.add('active');loadQList();
 }
 
 // ── Survey ─────────────────────────────────────────────────────────────────
 function renderSurvey(){
   const el=document.getElementById('survey-body');
-  // if a team is selected in the survey, use their questions
-  let qs=selQs;
-  if(sv.team){
-    const t=teams.find(t=>t.id===sv.team.id);
-    if(t) try{qs=new Set(JSON.parse(t.questions||'[]').map(Number));}catch(e){}
-  }
-  const aQs=Qs.filter(q=>qs.has(q.n));
-  if(!aQs.length){el.innerHTML='<div class="empty-state card"><div class="empty-icon">⚙️</div><div>No questions configured for this team.</div></div>';return;}
-  if(!sv.team) renderSvStart(el,aQs);
-  else if(sv.step>=aQs.length) renderSvDone(el);
-  else renderSvQ(el,aQs);
+  if(!sv.round){renderSvSelectRound(el);return;}
+  if(sv.step===-1){renderSvName(el);return;}
+  const aQs=Qs.filter(q=>sv.round.questions.includes(q.n));
+  if(sv.step>=aQs.length){renderSvDone(el);return;}
+  renderSvQ(el,aQs);
 }
-function renderSvStart(el,aQs){
-  if(!teams.length){el.innerHTML='<div class="empty-state card"><div class="empty-icon">🏢</div><div>No teams configured.</div></div>';return;}
-  // if team pre-selected via share link, skip the selector
-  if(svPreselectedTeam){
-    sv={team:svPreselectedTeam,answers:{},step:0};
-    svPreselectedTeam=null;
-    renderSurvey(); return;
+
+function renderSvSelectRound(el){
+  if(!rounds.length){
+    el.innerHTML='<div class="empty-state card"><div class="empty-icon">&#9881;</div><div>No rounds configured yet. Ask your admin for a direct survey link.</div></div>';return;
   }
+  const opts=rounds.map(r=>{
+    const t=teams.find(t=>t.id===r.team_id);
+    const qcount=JSON.parse(r.questions||'[]').length;
+    return `<option value="${r.id}" data-label="${r.label}" data-team="${t?t.name:''}" data-qcount="${qcount}">${t?t.name+' - ':'' }${r.label}</option>`;
+  }).join('');
   el.innerHTML=`<div class="card">
-    <div style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Select your team</div>
-    <select id="t-sel" style="margin-bottom:1.5rem" onchange="updateQCount()">
-      <option value="">— Choose —</option>
-      ${teams.map(t=>`<option value="${t.id}" data-name="${t.name}" data-qcount="${(()=>{try{return JSON.parse(t.questions||'[]').length;}catch(e){return Qs.length;}})()}">${t.name}</option>`).join('')}
+    <div style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Select your round</div>
+    <select id="r-sel" style="margin-bottom:1rem" onchange="updateRoundInfo()">
+      <option value="">- Choose -</option>${opts}
     </select>
-    <div class="text-sm" style="margin-bottom:1.5rem">This survey has <strong id="q-count-label">—</strong> questions. Responses are anonymous.</div>
-    <div class="row" style="justify-content:space-between">
-      <span style="font-size:12px;color:var(--ink3)">1 = Never · 5 = Always</span>
-      <button class="btn btn-primary" onclick="startSv()">Begin →</button>
+    <div id="round-info" class="text-sm" style="margin-bottom:1.5rem;min-height:20px"></div>
+    <div class="row" style="justify-content:flex-end">
+      <button class="btn btn-primary" onclick="startSv()">Begin</button>
     </div>
   </div>`;
 }
-function updateQCount(){
-  const sel=document.getElementById('t-sel');
-  const lbl=document.getElementById('q-count-label');
-  if(!lbl)return;
-  if(!sel||!sel.value){lbl.textContent='—';return;}
+function updateRoundInfo(){
+  const sel=document.getElementById('r-sel');
+  const info=document.getElementById('round-info');
+  if(!sel||!info)return;
+  if(!sel.value){info.textContent='';return;}
   const opt=sel.options[sel.selectedIndex];
-  lbl.textContent=opt.dataset.qcount||'—';
+  info.innerHTML=`Team: <strong>${opt.dataset.team}</strong> &nbsp;&middot;&nbsp; Round: <strong>${opt.dataset.label}</strong> &nbsp;&middot;&nbsp; <strong>${opt.dataset.qcount}</strong> questions`;
 }
 function startSv(){
-  const sel=document.getElementById('t-sel');
-  if(!sel.value){sel.classList.add('input-error');return;}
-  const opt=sel.options[sel.selectedIndex];
-  // load that team's question set
-  const t=teams.find(t=>t.id===sel.value);
-  if(t) try{selQs=new Set(JSON.parse(t.questions||'[]').map(Number));}catch(e){}
-  sv={team:{id:sel.value,name:opt.dataset.name},answers:{},step:0};
+  const sel=document.getElementById('r-sel');
+  if(!sel||!sel.value){if(sel)sel.classList.add('input-error');return;}
+  const r=rounds.find(r=>r.id===sel.value);
+  const t=teams.find(t=>t.id===r.team_id);
+  sv={round:{id:r.id,label:r.label,teamName:t?t.name:'',questions:JSON.parse(r.questions||'[]')},firstName:'',lastName:'',answers:{},step:-1};
   renderSurvey();
 }
+
+function renderSvName(el){
+  el.innerHTML=`<div class="survey-q-card">
+    <div style="font-size:12px;color:var(--ink3);font-weight:600;margin-bottom:1rem">${sv.round.teamName} &nbsp;&middot;&nbsp; ${sv.round.label}</div>
+    <div style="font-family:var(--font-display);font-size:20px;margin-bottom:1.5rem">Before you begin, please introduce yourself</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem">
+      <div>
+        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.04em;color:var(--ink3)">First name</label>
+        <input type="text" id="sv-first" placeholder="First name" value="${sv.firstName}">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.04em;color:var(--ink3)">Last name</label>
+        <input type="text" id="sv-last" placeholder="Last name" value="${sv.lastName}">
+      </div>
+    </div>
+    <div class="text-sm" style="margin-bottom:1.5rem">This assessment has <strong>${sv.round.questions.length} questions</strong>. Your answers will be visible to your team admin.</div>
+    <div class="row" style="justify-content:flex-end">
+      <button class="btn btn-primary" onclick="beginQuestions()">Start survey</button>
+    </div>
+  </div>`;
+  setTimeout(()=>{const f=document.getElementById('sv-first');if(f)f.focus();},100);
+}
+function beginQuestions(){
+  const first=document.getElementById('sv-first').value.trim();
+  const last=document.getElementById('sv-last').value.trim();
+  if(!first)document.getElementById('sv-first').classList.add('input-error');
+  if(!last)document.getElementById('sv-last').classList.add('input-error');
+  if(!first||!last)return;
+  sv.firstName=first;sv.lastName=last;sv.step=0;
+  renderSurvey();
+}
+
 function renderSvQ(el,aQs){
-  const q=aQs[sv.step], ans=sv.answers[q.n];
+  const q=aQs[sv.step];
+  const ans=sv.answers[q.n]||{};
+  const score=ans.score;
+  const comment=ans.comment||'';
   const pct=(sv.step/aQs.length*100).toFixed(0);
   el.innerHTML=`
   <div class="survey-progress">
     <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
-    <div class="progress-label">${sv.step} of ${aQs.length} answered · Team: <strong>${sv.team.name}</strong></div>
+    <div class="progress-label">${sv.step} of ${aQs.length} answered &nbsp;&middot;&nbsp; ${sv.round.teamName} &nbsp;&middot;&nbsp; ${sv.round.label}</div>
   </div>
   <div class="survey-q-card">
-    <div class="q-cat-row"><span style="font-size:12px;color:var(--ink3);font-weight:600">Q${q.n}</span></div>
+    <div class="q-cat-row"><span style="font-size:12px;color:var(--ink3);font-weight:600">Question ${sv.step+1} of ${aQs.length}</span></div>
     <div class="q-body">${q.text}</div>
-    <div class="scale-row">${[1,2,3,4,5].map(v=>`<button class="scale-btn ${ans===v?'selected':''}" onclick="setA(${q.n},${v})">${v}</button>`).join('')}</div>
+    <div class="scale-row">${[1,2,3,4,5].map(v=>`<button class="scale-btn ${score===v?'selected':''}" onclick="setScore(${q.n},${v})">${v}</button>`).join('')}</div>
     <div class="scale-labels"><span class="scale-label">Never</span><span class="scale-label">Rarely</span><span class="scale-label">Occasionally</span><span class="scale-label">Most of the time</span><span class="scale-label">Always</span></div>
+    <div class="q-comment">
+      <label>Comment (optional)</label>
+      <textarea id="q-comment-${q.n}" placeholder="Any context, anecdote or clarification for this question...">${comment}</textarea>
+    </div>
   </div>
   <div class="survey-nav">
-    <button class="btn btn-outline btn-sm" onclick="svBack()" ${sv.step===0?'disabled':''}>← Back</button>
-    <button class="btn btn-primary btn-sm" id="nxt" onclick="svNext(${aQs.length})" ${ans===undefined?'disabled':''}>
-      ${sv.step===aQs.length-1?'Submit ✓':'Next →'}
+    <button class="btn btn-outline btn-sm" onclick="svBack()">Back</button>
+    <button class="btn btn-primary btn-sm" id="nxt" onclick="svNext(${aQs.length})" ${score===undefined?'disabled':''}>
+      ${sv.step===aQs.length-1?'Submit':'Next'}
     </button>
   </div>`;
 }
-function setA(qn,val){
-  sv.answers[qn]=val;
-  const t=sv.team?teams.find(t=>t.id===sv.team.id):null;
-  let qs=selQs;
-  if(t) try{qs=new Set(JSON.parse(t.questions||'[]').map(Number));}catch(e){}
-  renderSvQ(document.getElementById('survey-body'),Qs.filter(q=>qs.has(q.n)));
+function setScore(qn,val){
+  if(!sv.answers[qn])sv.answers[qn]={};
+  sv.answers[qn].score=val;
+  // preserve comment before re-render
+  const commentEl=document.getElementById('q-comment-'+qn);
+  if(commentEl)sv.answers[qn].comment=commentEl.value;
+  const aQs=Qs.filter(q=>sv.round.questions.includes(q.n));
+  renderSvQ(document.getElementById('survey-body'),aQs);
 }
-function svBack(){if(sv.step>0){sv.step--;renderSurvey();}}
+function svBack(){
+  // save comment before going back
+  const aQs=Qs.filter(q=>sv.round.questions.includes(q.n));
+  if(sv.step>=0&&sv.step<aQs.length){
+    const q=aQs[sv.step];
+    const commentEl=document.getElementById('q-comment-'+q.n);
+    if(commentEl){if(!sv.answers[q.n])sv.answers[q.n]={};sv.answers[q.n].comment=commentEl.value;}
+  }
+  if(sv.step===0){sv.step=-1;renderSurvey();return;}
+  if(sv.step>0){sv.step--;renderSurvey();}
+}
 async function svNext(tot){
-  const t=sv.team?teams.find(t=>t.id===sv.team.id):null;
-  let qs=selQs;
-  if(t) try{qs=new Set(JSON.parse(t.questions||'[]').map(Number));}catch(e){}
-  const aQs=Qs.filter(q=>qs.has(q.n));
+  // save comment before advancing
+  const aQs=Qs.filter(q=>sv.round.questions.includes(q.n));
+  const q=aQs[sv.step];
+  const commentEl=document.getElementById('q-comment-'+q.n);
+  if(commentEl){if(!sv.answers[q.n])sv.answers[q.n]={};sv.answers[q.n].comment=commentEl.value;}
+
   if(sv.step<aQs.length-1){sv.step++;renderSurvey();return;}
+
   const btn=document.getElementById('nxt');
-  btn.disabled=true; btn.innerHTML='Saving… <span class="spinner"></span>';
+  btn.disabled=true;btn.innerHTML='Saving... <span class="spinner"></span>';
   try{
-    const savedTeam=sv.team;
-    await saveResp(savedTeam.id,savedTeam.name,sv.answers);
-    sv={team:null,answers:{},step:0,_lastTeam:savedTeam.name};
+    await saveResp(sv.round.id,sv.firstName,sv.lastName,sv.answers);
     renderSvDone(document.getElementById('survey-body'));
-  }catch(e){btn.disabled=false;btn.textContent='Submit ✓';alert('Save failed, please retry.');}
+    sv={round:null,firstName:'',lastName:'',answers:{},step:0};
+  }catch(e){btn.disabled=false;btn.textContent='Submit';alert('Save failed, please retry.');}
 }
 function renderSvDone(el){
-  const teamName=sv._lastTeam||'';
   el.innerHTML=`<div class="survey-q-card" style="text-align:center;padding:3.5rem 2rem">
-    <div style="font-size:52px;margin-bottom:1.25rem">🙏</div>
+    <div style="font-size:52px;margin-bottom:1.25rem">&#128591;</div>
     <div style="font-family:var(--font-display);font-size:30px;margin-bottom:12px;letter-spacing:-0.02em">Thank you!</div>
-    <div style="color:var(--ink2);font-size:15px;line-height:1.7;max-width:420px;margin:0 auto 2rem">
-      Thank you for filling out this questionnaire — your input is of utmost importance to us.
+    <div style="color:var(--ink2);font-size:15px;line-height:1.7;max-width:420px;margin:0 auto">
+      Thank you for filling out this questionnaire &mdash; your input is of utmost importance to us.
     </div>
   </div>`;
 }
@@ -766,46 +793,79 @@ function renderSvDone(el){
 function calcScores(resp){
   const out={};
   Object.keys(CAT).forEach(cat=>{
-    const qs=Qs.filter(q=>q.cat===cat), vals=[];
-    resp.forEach(r=>qs.forEach(q=>{const v=r.answers[q.n];if(v!==undefined)vals.push(v);}));
+    const qs=Qs.filter(q=>q.cat===cat),vals=[];
+    resp.forEach(r=>qs.forEach(q=>{
+      const a=r.answers[q.n];
+      const v=a&&typeof a==='object'?a.score:a;
+      if(v!==undefined&&v!==null)vals.push(Number(v));
+    }));
     out[cat]=vals.length?(vals.reduce((a,b)=>a+b,0)/vals.length):null;
   });
   return out;
 }
 async function fetchResults(){
-  document.getElementById('results-body').innerHTML='<div class="empty-state"><div style="font-size:24px">⏳</div><div>Loading…</div></div>';
-  try{allResp=await getResp();renderResults();}
+  document.getElementById('results-body').innerHTML='<div class="empty-state"><div style="font-size:24px">&#9203;</div><div>Loading...</div></div>';
+  try{allResponses=await getResponses();renderResults();}
   catch(e){document.getElementById('results-body').innerHTML='<div class="alert alert-error">Could not load: '+e.message+'</div>';}
 }
 function renderResults(){
   const el=document.getElementById('results-body');
-  const tnames=[...new Set(allResp.map(r=>r.team_name))].sort();
-  if(!tnames.length){
-    el.innerHTML='<div class="empty-state card"><div class="empty-icon">📊</div><div class="font-bold" style="margin-bottom:8px">No responses yet</div><div class="text-sm">Complete the survey to see results.</div></div>';return;
+
+  // Build team->round->responses map
+  const teamMap={};
+  allResponses.forEach(r=>{
+    if(!r.rounds)return;
+    const tid=r.rounds.team_id;
+    const tname=r.rounds.teams?r.rounds.teams.name:'Unknown';
+    if(!teamMap[tid])teamMap[tid]={id:tid,name:tname,rounds:{}};
+    const rid=r.rounds.id;
+    if(!teamMap[tid].rounds[rid])teamMap[tid].rounds[rid]={id:rid,label:r.rounds.label,responses:[]};
+    teamMap[tid].rounds[rid].responses.push(r);
+  });
+
+  const teamList=Object.values(teamMap);
+  if(!teamList.length){
+    el.innerHTML='<div class="empty-state card"><div class="empty-icon">&#128202;</div><div class="font-bold" style="margin-bottom:8px">No responses yet</div><div class="text-sm">Complete a survey round to see results here.</div></div>';return;
   }
-  if(!rTeam||!tnames.includes(rTeam))rTeam=tnames[0];
-  const tR=allResp.filter(r=>r.team_name===rTeam);
-  const sc=calcScores(tR);
-  const cR=cTeam&&cTeam!==rTeam?allResp.filter(r=>r.team_name===cTeam):null;
-  const cSc=cR?calcScores(cR):null;
+
+  if(!rTeamId||!teamMap[rTeamId])rTeamId=teamList[0].id;
+  const ct=teamMap[rTeamId];
+  const roundList=Object.values(ct.rounds);
+  if(!rRoundId||!ct.rounds[rRoundId])rRoundId=roundList[0]?.id||null;
+  if(cRoundId===rRoundId)cRoundId=null;
+
+  const rRound=rRoundId?ct.rounds[rRoundId]:null;
+  const rResp=rRound?rRound.responses:[];
+  const cRound=cRoundId?ct.rounds[cRoundId]:null;
+  const cResp=cRound?cRound.responses:[];
+  const sc=calcScores(rResp);
+  const cSc=cRound?calcScores(cResp):null;
   const vals=Object.values(sc).filter(v=>v!==null);
   const ov=vals.length?(vals.reduce((a,b)=>a+b,0)/vals.length):0;
 
   el.innerHTML=`
   <div class="card">
     <div class="card-title">Team</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;${tnames.length>1?'margin-bottom:1rem':''}">
-      ${tnames.map(t=>`<button class="team-pill ${t===rTeam?'active':''}" onclick="rTeam='${t}';cTeam=null;renderResults()">${t} <span style="opacity:0.6;font-size:11px">${allResp.filter(r=>r.team_name===t).length}</span></button>`).join('')}
-    </div>
-    ${tnames.length>1?`<div style="font-size:12px;color:var(--ink3);margin-bottom:6px">Compare with:</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="team-pill ${!cTeam?'active':''}" onclick="cTeam=null;renderResults()" style="font-size:12px">None</button>
-      ${tnames.filter(t=>t!==rTeam).map(t=>`<button class="team-pill ${t===cTeam?'compare':''}" onclick="cTeam='${t}';renderResults()" style="font-size:12px">${t}</button>`).join('')}
+      ${teamList.map(t=>`<button class="team-pill ${t.id===rTeamId?'active':''}" onclick="rTeamId='${t.id}';rRoundId=null;cRoundId=null;renderResults()">${t.name}</button>`).join('')}
+    </div>
+  </div>
+
+  <div class="card mt">
+    <div class="card-title">Round</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap${roundList.length>1?';margin-bottom:1rem':''}">
+      ${roundList.map(r=>`<button class="team-pill ${r.id===rRoundId?'active':''}" onclick="rRoundId='${r.id}';cRoundId=null;renderResults()">${r.label} <span style="opacity:0.6;font-size:11px">${r.responses.length}</span></button>`).join('')}
+    </div>
+    ${roundList.length>1?`
+    <div style="font-size:12px;color:var(--ink3);margin-bottom:6px">Compare with:</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="team-pill ${!cRoundId?'active':''}" onclick="cRoundId=null;renderResults()" style="font-size:12px">None</button>
+      ${roundList.filter(r=>r.id!==rRoundId).map(r=>`<button class="team-pill ${r.id===cRoundId?'compare':''}" onclick="cRoundId='${r.id}';renderResults()" style="font-size:12px">${r.label}</button>`).join('')}
     </div>`:''}
   </div>
 
   <div class="stats-grid mt">
-    <div class="stat-card"><div class="stat-label">Responses</div><div class="stat-value">${tR.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Responses</div><div class="stat-value">${rResp.length}</div></div>
     <div class="stat-card"><div class="stat-label">Overall avg</div><div class="stat-value">${ov.toFixed(1)}<span class="stat-max">/5</span></div></div>
     <div class="stat-card"><div class="stat-label">Strongest</div><div class="stat-value" style="font-size:18px;padding-top:8px">${ext(sc,'max')}</div></div>
     <div class="stat-card"><div class="stat-label">Focus area</div><div class="stat-value" style="font-size:18px;padding-top:8px">${ext(sc,'min')}</div></div>
@@ -814,13 +874,13 @@ function renderResults(){
   <div class="card mt">
     <div class="card-title">Scores by dimension</div>
     ${cSc?`<div style="display:flex;gap:16px;margin-bottom:1rem">
-      <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>${rTeam}</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--amber);opacity:0.55"></div>${cTeam}</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>${rRound.label}</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--amber);opacity:0.55"></div>${cRound.label}</div>
     </div>`:''}
     <div class="bar-chart">
       ${Object.entries(CAT).map(([cat,label])=>{
         const s=sc[cat],cs=cSc?cSc[cat]:null;
-        const p=s!==null?(s/5*100).toFixed(1):0, cp=cs!==null?(cs/5*100).toFixed(1):0;
+        const p=s!==null?(s/5*100).toFixed(1):0,cp=cs!==null?(cs/5*100).toFixed(1):0;
         return `<div class="bar-row">
           <div class="bar-label">${label}</div>
           <div class="bar-track">
@@ -835,18 +895,22 @@ function renderResults(){
 
   <div class="card mt">
     <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
-      Individual responses <button class="btn btn-outline btn-sm" onclick="fetchResults()">↻ Refresh</button>
+      Individual responses <button class="btn btn-outline btn-sm" onclick="fetchResults()">Refresh</button>
     </div>
     <div style="overflow-x:auto">
       <table class="responses-table">
-        <thead><tr><th>#</th><th>Date</th>${Object.values(CAT).map(l=>`<th>${l}</th>`).join('')}<th>Avg</th></tr></thead>
+        <thead><tr><th>#</th><th>Name</th><th>Date</th>${Object.values(CAT).map(l=>`<th>${l}</th>`).join('')}<th>Avg</th></tr></thead>
         <tbody>
-          ${tR.map((r,i)=>{
+          ${rResp.map((r,i)=>{
             const rs=calcScores([r]),v2=Object.values(rs).filter(v=>v!==null);
             const ov2=v2.length?(v2.reduce((a,b)=>a+b,0)/v2.length):null;
-            return `<tr><td style="color:var(--ink3)">${i+1}</td><td style="color:var(--ink3)">${new Date(r.submitted_at).toLocaleDateString()}</td>
-            ${Object.keys(CAT).map(cat=>{const v=rs[cat];return `<td><span class="score-pill ${v!==null?'score-'+Math.round(v):''}">${v!==null?v.toFixed(1):'-'}</span></td>`;}).join('')}
-            <td><strong>${ov2!==null?ov2.toFixed(2):'-'}</strong></td></tr>`;
+            return `<tr>
+              <td style="color:var(--ink3)">${i+1}</td>
+              <td style="font-weight:500">${r.first_name} ${r.last_name}</td>
+              <td style="color:var(--ink3)">${new Date(r.submitted_at).toLocaleDateString()}</td>
+              ${Object.keys(CAT).map(cat=>{const v=rs[cat];return `<td><span class="score-pill ${v!==null?'score-'+Math.round(v):''}">${v!==null?v.toFixed(1):'-'}</span></td>`;}).join('')}
+              <td><strong>${ov2!==null?ov2.toFixed(2):'-'}</strong></td>
+            </tr>`;
           }).join('')}
         </tbody>
       </table>
@@ -860,10 +924,7 @@ function ext(sc,dir){
 }
 
 // ── Boot ───────────────────────────────────────────────────────────────────
-(async()=>{
-  try{ await boot(); }
-  catch(e){ console.error('Boot failed:',e); }
-})();
+(async()=>{try{await boot();}catch(e){console.error('Boot failed:',e);}})();
 </script>
 </body>
 </html>

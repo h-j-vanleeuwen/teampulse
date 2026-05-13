@@ -380,9 +380,7 @@ let rTeamId=null,rRoundId=null,cRoundId=null;
 
 // PIN state
 let pinEntry='',pinTarget=null,adminUnlocked=false;
-const PIN_KEY='tp_pin';
-const DEFAULT_PIN_HASH=String(('1234').split('').reduce((h,c)=>{h=(h<<5)-h+c.charCodeAt(0);return h|0;},0));
-function getStoredPin(){return localStorage.getItem(PIN_KEY)||DEFAULT_PIN_HASH;}
+let cachedPinHash=null; // loaded from Supabase at boot
 function hashPin(p){let h=0;for(let i=0;i<p.length;i++){h=(h<<5)-h+p.charCodeAt(i);h|=0;}return String(h);}
 
 // ── PIN ────────────────────────────────────────────────────────────────────
@@ -409,7 +407,7 @@ function updatePinDots(err=false){
   }
 }
 function checkPin(){
-  if(hashPin(pinEntry)===getStoredPin()){
+  if(hashPin(pinEntry)===cachedPinHash){
     adminUnlocked=true;
     document.getElementById('pin-overlay').style.display='none';
     document.getElementById('admin-badge').style.display='flex';
@@ -426,28 +424,22 @@ function lockAdmin(){
   document.getElementById('admin-badge').style.display='none';
   showPage('survey');
 }
-function savePin(){
+async function savePin(){
   const a=document.getElementById('pin-a').value.trim();
   const b=document.getElementById('pin-b').value.trim();
   const errEl=document.getElementById('pin-set-err');
   errEl.style.display='none';
   if(!/^\d{4}$/.test(a)){errEl.textContent='PIN must be exactly 4 digits.';errEl.style.display='block';return;}
   if(a!==b){errEl.textContent='PINs do not match.';errEl.style.display='block';return;}
-  localStorage.setItem(PIN_KEY,hashPin(a));
-  document.getElementById('pin-a').value='';document.getElementById('pin-b').value='';
-  renderPinStatus();
-}
-function clearPin(){
-  if(!confirm('Remove the admin PIN?'))return;
-  localStorage.removeItem(PIN_KEY);
-  adminUnlocked=false;
-  document.getElementById('admin-badge').style.display='none';
-  renderPinStatus();
+  try{
+    await setPinDB(hashPin(a));
+    cachedPinHash=hashPin(a);
+    document.getElementById('pin-a').value='';document.getElementById('pin-b').value='';
+    renderPinStatus();
+  }catch(e){errEl.textContent='Could not save PIN. Try again.';errEl.style.display='block';}
 }
 function renderPinStatus(){
-  document.getElementById('pin-status-box').innerHTML=getStoredPin()
-    ?`<div class="alert alert-success" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><span>&#128274; PIN is set.</span><button class="btn btn-outline btn-sm" onclick="clearPin()">Remove PIN</button></div>`
-    :`<div class="alert alert-info" style="margin-bottom:10px">No PIN set — Admin and Results are open to anyone with the URL.</div>`;
+  document.getElementById('pin-status-box').innerHTML=`<div class="alert alert-success" style="margin-bottom:10px">&#128274; PIN is set and stored securely.</div>`;
 }
 
 // ── Supabase ───────────────────────────────────────────────────────────────
@@ -469,6 +461,8 @@ const delRoundDB=id=>api('rounds?id=eq.'+id,{method:'DELETE',prefer:''});
 const getRoundById=id=>api('rounds?id=eq.'+id+'&select=*,teams(name)');
 const saveResp=(roundId,firstName,lastName,answers)=>api('responses',{method:'POST',body:JSON.stringify({round_id:roundId,first_name:firstName,last_name:lastName,answers})});
 const getResponses=()=>api('responses?select=*,rounds(id,label,team_id,teams(name))&order=submitted_at.desc');
+const getPinDB=()=>api('settings?key=eq.admin_pin&select=value');
+const setPinDB=hash=>api('settings?key=eq.admin_pin',{method:'PATCH',body:JSON.stringify({value:hash})});
 
 // ── Nav ────────────────────────────────────────────────────────────────────
 function showPage(p){
@@ -482,8 +476,12 @@ function showPage(p){
 
 // ── Boot ───────────────────────────────────────────────────────────────────
 async function boot(){
+  // Load PIN from Supabase
+  try{
+    const res=await getPinDB();
+    cachedPinHash=res&&res.length?res[0].value:null;
+  }catch(e){console.error('Could not load PIN:',e);}
   renderPinStatus();
-  if(!getStoredPin())adminUnlocked=true;
   if(adminUnlocked)document.getElementById('admin-badge').style.display='flex';
   await loadAll();
 

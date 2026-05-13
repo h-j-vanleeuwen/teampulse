@@ -747,7 +747,8 @@ async function svNext(tot){
   try{
     const savedTeam=sv.team;
     await saveResp(savedTeam.id,savedTeam.name,sv.answers);
-    sv={team:null,answers:{},step:0,_lastTeam:savedTeam.name}; renderSurvey();
+    sv={team:null,answers:{},step:0,_lastTeam:savedTeam.name};
+    renderSvDone(document.getElementById('survey-body'));
   }catch(e){btn.disabled=false;btn.textContent='Submit ✓';alert('Save failed, please retry.');}
 }
 function renderSvDone(el){

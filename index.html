@@ -755,12 +755,10 @@ function renderSvDone(el){
   const teamName=sv._lastTeam||'';
   el.innerHTML=`<div class="survey-q-card" style="text-align:center;padding:3.5rem 2rem">
     <div style="font-size:52px;margin-bottom:1.25rem">🙏</div>
-    <div style="font-family:var(--font-display);font-size:30px;margin-bottom:12px;letter-spacing:-0.02em">Thank you${teamName?' — '+teamName:''}!</div>
+    <div style="font-family:var(--font-display);font-size:30px;margin-bottom:12px;letter-spacing:-0.02em">Thank you!</div>
     <div style="color:var(--ink2);font-size:15px;line-height:1.7;max-width:420px;margin:0 auto 2rem">
       Thank you for filling out this questionnaire — your input is of utmost importance to us.
     </div>
-    <div style="width:48px;height:2px;background:var(--border);margin:0 auto 2rem;border-radius:2px"></div>
-    <button class="btn btn-outline btn-sm" onclick="sv={team:null,answers:{},step:0};renderSurvey()">← Submit another response</button>
   </div>`;
 }
 

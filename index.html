@@ -678,16 +678,24 @@ function renderSvStart(el,aQs){
   }
   el.innerHTML=`<div class="card">
     <div style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Select your team</div>
-    <select id="t-sel" style="margin-bottom:1.5rem">
+    <select id="t-sel" style="margin-bottom:1.5rem" onchange="updateQCount()">
       <option value="">— Choose —</option>
-      ${teams.map(t=>`<option value="${t.id}" data-name="${t.name}">${t.name}</option>`).join('')}
+      ${teams.map(t=>`<option value="${t.id}" data-name="${t.name}" data-qcount="${(()=>{try{return JSON.parse(t.questions||'[]').length;}catch(e){return Qs.length;}})()}">${t.name}</option>`).join('')}
     </select>
-    <div class="text-sm" style="margin-bottom:1.5rem">This survey has <strong>${aQs.length} questions</strong>. Responses are anonymous.</div>
+    <div class="text-sm" style="margin-bottom:1.5rem">This survey has <strong id="q-count-label">—</strong> questions. Responses are anonymous.</div>
     <div class="row" style="justify-content:space-between">
       <span style="font-size:12px;color:var(--ink3)">1 = Never · 5 = Always</span>
       <button class="btn btn-primary" onclick="startSv()">Begin →</button>
     </div>
   </div>`;
+}
+function updateQCount(){
+  const sel=document.getElementById('t-sel');
+  const lbl=document.getElementById('q-count-label');
+  if(!lbl)return;
+  if(!sel||!sel.value){lbl.textContent='—';return;}
+  const opt=sel.options[sel.selectedIndex];
+  lbl.textContent=opt.dataset.qcount||'—';
 }
 function startSv(){
   const sel=document.getElementById('t-sel');
@@ -708,7 +716,7 @@ function renderSvQ(el,aQs){
     <div class="progress-label">${sv.step} of ${aQs.length} answered · Team: <strong>${sv.team.name}</strong></div>
   </div>
   <div class="survey-q-card">
-    <div class="q-cat-row"><span style="font-size:12px;color:var(--ink3);font-weight:600">Q${q.n}</span><span class="badge ${BC[q.cat]}">${CAT[q.cat]}</span></div>
+    <div class="q-cat-row"><span style="font-size:12px;color:var(--ink3);font-weight:600">Q${q.n}</span></div>
     <div class="q-body">${q.text}</div>
     <div class="scale-row">${[1,2,3,4,5].map(v=>`<button class="scale-btn ${ans===v?'selected':''}" onclick="setA(${q.n},${v})">${v}</button>`).join('')}</div>
     <div class="scale-labels"><span class="scale-label">Never</span><span class="scale-label">Rarely</span><span class="scale-label">Occasionally</span><span class="scale-label">Most of the time</span><span class="scale-label">Always</span></div>
@@ -737,18 +745,22 @@ async function svNext(tot){
   const btn=document.getElementById('nxt');
   btn.disabled=true; btn.innerHTML='Saving… <span class="spinner"></span>';
   try{
-    await saveResp(sv.team.id,sv.team.name,sv.answers);
-    sv={team:null,answers:{},step:0}; renderSurvey();
+    const savedTeam=sv.team;
+    await saveResp(savedTeam.id,savedTeam.name,sv.answers);
+    sv={team:null,answers:{},step:0,_lastTeam:savedTeam.name}; renderSurvey();
   }catch(e){btn.disabled=false;btn.textContent='Submit ✓';alert('Save failed, please retry.');}
 }
 function renderSvDone(el){
-  el.innerHTML=`<div class="survey-q-card" style="text-align:center;padding:3rem 2rem">
-    <div style="font-size:48px;margin-bottom:1rem">✅</div>
-    <div style="font-family:var(--font-display);font-size:26px;margin-bottom:8px">Thank you!</div>
-    <div class="text-sm" style="margin-bottom:1.5rem">Your response has been saved.</div>
-    <button class="btn btn-primary" onclick="sv={team:null,answers:{},step:0};renderSurvey()">Submit another →</button>
-    &nbsp;
-    <button class="btn btn-outline" onclick="showPage('results')">View results →</button>
+  const teamName=sv._lastTeam||'';
+  el.innerHTML=`<div class="survey-q-card" style="text-align:center;padding:3.5rem 2rem">
+    <div style="font-size:52px;margin-bottom:1.25rem">🙏</div>
+    <div style="font-family:var(--font-display);font-size:30px;margin-bottom:12px;letter-spacing:-0.02em">Thank you${teamName?' — '+teamName:''}!</div>
+    <div style="color:var(--ink2);font-size:15px;line-height:1.7;max-width:420px;margin:0 auto 0.5rem">
+      Your answers have been saved. Every honest response helps your team understand where it stands and where to grow together.
+    </div>
+    <div style="color:var(--ink3);font-size:13px;margin-bottom:2rem">Results are anonymous and visible to your team admin.</div>
+    <div style="width:48px;height:2px;background:var(--border);margin:0 auto 2rem;border-radius:2px"></div>
+    <button class="btn btn-outline btn-sm" onclick="sv={team:null,answers:{},step:0};renderSurvey()">← Submit another response</button>
   </div>`;
 }
 

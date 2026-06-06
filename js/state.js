@@ -1,0 +1,17 @@
+export const state = {
+  teams:         [],
+  rounds:        [],
+  activeTeamId:  null,
+  activeRoundId: null,
+  selQs:         new Set(),
+  catF:          'all',
+  sv:            { round: null, firstName: '', lastName: '', answers: {}, step: 0 },
+  allResponses:  [],
+  rTeamId:       null,
+  rRoundId:      null,
+  cRoundId:      null,
+  adminUnlocked: false,
+  cachedPinHash: null,
+  pinEntry:      '',
+  pinTarget:     null,
+};

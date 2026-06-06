@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TeamPulse - Lencioni Survey</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo">Team<span>Pulse</span></div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <button id="admin-badge" class="pin-session-badge" style="display:none" onclick="lockAdmin()" title="Click to lock">&#128275; Admin</button>
+    <div class="nav-tabs">
+      <button class="nav-tab" onclick="showPageGuarded('admin')">Admin</button>
+      <button class="nav-tab active" onclick="showPage('survey')">Survey</button>
+      <button class="nav-tab" onclick="showPageGuarded('results')">Results</button>
+    </div>
+  </div>
+</nav>
+
+<!-- PIN OVERLAY -->
+<div id="pin-overlay" class="pin-overlay" style="display:none">
+  <div class="pin-box">
+    <div class="pin-icon">&#128274;</div>
+    <div class="pin-title" id="pin-title">Admin access</div>
+    <div class="pin-sub">Enter your 4-digit admin PIN.</div>
+    <div class="pin-dots">
+      <div class="pin-dot" id="pd0"></div>
+      <div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div>
+      <div class="pin-dot" id="pd3"></div>
+    </div>
+    <div class="pin-keypad">
+      <button class="pin-key" onclick="pinKey('1')">1</button>
+      <button class="pin-key" onclick="pinKey('2')">2</button>
+      <button class="pin-key" onclick="pinKey('3')">3</button>
+      <button class="pin-key" onclick="pinKey('4')">4</button>
+      <button class="pin-key" onclick="pinKey('5')">5</button>
+      <button class="pin-key" onclick="pinKey('6')">6</button>
+      <button class="pin-key" onclick="pinKey('7')">7</button>
+      <button class="pin-key" onclick="pinKey('8')">8</button>
+      <button class="pin-key" onclick="pinKey('9')">9</button>
+      <button class="pin-key" onclick="pinKey('')"></button>
+      <button class="pin-key" onclick="pinKey('0')">0</button>
+      <button class="pin-key del" onclick="pinKey('del')">&#9003;</button>
+    </div>
+    <div class="pin-err" id="pin-err"></div>
+    <div style="margin-top:1rem">
+      <button class="btn btn-outline btn-sm" onclick="cancelPin()">Cancel</button>
+    </div>
+    <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border2)">
+      <div style="font-size:12px;color:var(--ink3)">Default PIN is 1234. Change it in the Admin panel.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN PAGE -->
+<div id="page-admin" class="page">
+  <div class="page-title">Admin panel</div>
+  <div class="page-sub">Manage teams, rounds, and question sets.</div>
+
+  <div class="card">
+    <div class="card-title">Teams</div>
+    <div class="team-list" id="team-list"><div class="text-sm" style="color:var(--ink3)">Loading...</div></div>
+    <div class="row">
+      <input type="text" id="new-team" placeholder="New team name..." style="max-width:260px" onkeydown="if(event.key==='Enter')addTeam()">
+      <button class="btn btn-outline btn-sm" onclick="addTeam()">+ Add team</button>
+    </div>
+  </div>
+
+  <div class="card mt" id="rounds-card" style="display:none">
+    <div class="card-title">Rounds &mdash; <span id="rounds-team-name" style="color:var(--accent)"></span></div>
+    <div class="round-list" id="round-list"></div>
+    <div class="row">
+      <input type="text" id="new-round" placeholder="Round label (e.g. Round 1, Q1 2025)..." style="max-width:320px" onkeydown="if(event.key==='Enter')addRound()">
+      <button class="btn btn-outline btn-sm" onclick="addRound()">+ Add round</button>
+    </div>
+  </div>
+
+  <div class="card mt" id="round-qs-card" style="display:none">
+    <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
+      <span>Questions &mdash; <span id="round-qs-label" style="color:var(--accent)"></span></span>
+      <span id="sel-count" style="font-size:12px;color:var(--ink3);font-weight:400"></span>
+    </div>
+    <div class="row" style="margin-bottom:10px">
+      <button class="btn btn-outline btn-sm" onclick="selectAll()">All</button>
+      <button class="btn btn-outline btn-sm" onclick="clearAll()">None</button>
+      <div class="flex-1"></div>
+      <button class="btn btn-primary btn-sm" onclick="saveRoundQs()" id="save-qs-btn">Save questions</button>
+    </div>
+    <div class="q-filter">
+      <button class="q-filter-btn active" onclick="filterCat(this,'all')">All</button>
+      <button class="q-filter-btn" onclick="filterCat(this,'Confiance')">Trust</button>
+      <button class="q-filter-btn" onclick="filterCat(this,'Conflit')">Conflict</button>
+      <button class="q-filter-btn" onclick="filterCat(this,'Engagement')">Commitment</button>
+      <button class="q-filter-btn" onclick="filterCat(this,'Responsabilite')">Accountability</button>
+      <button class="q-filter-btn" onclick="filterCat(this,'Resultats')">Results</button>
+    </div>
+    <div class="q-list" id="q-list"></div>
+  </div>
+
+  <div class="card mt" id="round-link-card" style="display:none">
+    <div class="card-title">Survey link &mdash; <span id="link-round-label" style="color:var(--accent)"></span></div>
+    <div class="text-sm" style="margin-bottom:10px">Send this link to team members. It opens the survey pre-configured for this round.</div>
+    <div class="link-box">
+      <span class="link-url" id="share-url">-</span>
+      <button class="btn btn-outline btn-sm" onclick="copyShare(this)">Copy</button>
+    </div>
+  </div>
+
+  <div class="card mt">
+    <div class="card-title">Admin PIN</div>
+    <div class="text-sm" style="margin-bottom:12px">Default PIN is <strong>1234</strong>. Change it here.</div>
+    <div id="pin-status-box"></div>
+    <div id="pin-set-form">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:320px;margin-bottom:10px">
+        <div>
+          <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">New PIN</label>
+          <input type="password" id="pin-a" maxlength="4" placeholder="4 digits" inputmode="numeric" pattern="[0-9]*">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Confirm PIN</label>
+          <input type="password" id="pin-b" maxlength="4" placeholder="4 digits" inputmode="numeric" pattern="[0-9]*">
+        </div>
+      </div>
+      <div id="pin-set-err" class="alert alert-error" style="display:none;max-width:320px;margin-bottom:8px"></div>
+      <button class="btn btn-primary btn-sm" onclick="savePin()">Set PIN</button>
+    </div>
+  </div>
+</div>
+
+<!-- SURVEY PAGE -->
+<div id="page-survey" class="page active">
+  <div class="survey-container">
+    <div class="survey-header">
+      <div class="survey-logo">Team<span>Pulse</span></div>
+      <div class="survey-title">Team Health Assessment</div>
+      <div class="survey-desc">Based on the Five Dysfunctions of a Team - Patrick Lencioni.<br>Rate each statement honestly from 1 (Never) to 5 (Always).</div>
+    </div>
+    <div id="survey-body"></div>
+  </div>
+</div>
+
+<!-- RESULTS PAGE -->
+<div id="page-results" class="page">
+  <div class="page-title">Results dashboard</div>
+  <div class="page-sub">Browse results by team and round.</div>
+  <div id="results-body"></div>
+</div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

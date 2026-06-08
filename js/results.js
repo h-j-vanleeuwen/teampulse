@@ -47,6 +47,66 @@ export async function fetchResults() {
   }
 }
 
+function buildLongitudinalSection(ct, roundList) {
+  const participantMap = {};
+
+  roundList.forEach(round => {
+    round.responses.forEach(r => {
+      const key = `${r.first_name} ${r.last_name}`;
+      if (!participantMap[key]) participantMap[key] = { name: key, rounds: {} };
+      const scores = calcScores([r]);
+      const vals = Object.values(scores).filter(v => v !== null);
+      const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+      participantMap[key].rounds[round.id] = { avg, scores, label: round.label };
+    });
+  });
+
+  const multiRound = Object.values(participantMap).filter(p => Object.keys(p.rounds).length >= 2);
+  if (!multiRound.length) return '';
+
+  const headers = roundList.map(r => `<th>${escapeHtml(r.label)}</th>`).join('');
+
+  const rows = multiRound.map(p => {
+    const roundCells = roundList.map(r => {
+      const rd = p.rounds[r.id];
+      if (!rd || rd.avg === null) return '<td><span style="color:var(--ink3)">-</span></td>';
+      const v = rd.avg;
+      return `<td><span class="score-pill score-${Math.round(v)}">${v.toFixed(1)}</span></td>`;
+    }).join('');
+
+    const presentRounds = roundList.filter(r => p.rounds[r.id] && p.rounds[r.id].avg !== null);
+    let trendCell = '<td><span style="color:var(--ink3)">-</span></td>';
+    if (presentRounds.length >= 2) {
+      const first = p.rounds[presentRounds[0].id].avg;
+      const last = p.rounds[presentRounds[presentRounds.length - 1].id].avg;
+      const diff = last - first;
+      const isUp = diff > 0.15;
+      const isDown = diff < -0.15;
+      const arrow = isUp ? '↑' : isDown ? '↓' : '→';
+      const color = isUp ? 'var(--green)' : isDown ? 'var(--red)' : 'var(--ink3)';
+      const sign = diff > 0 ? '+' : '';
+      trendCell = `<td><span class="trend-badge" style="color:${color}">${arrow} ${sign}${diff.toFixed(1)}</span></td>`;
+    }
+
+    return `<tr class="longi-row">
+      <td style="font-weight:500">${escapeHtml(p.name)}</td>
+      ${roundCells}
+      ${trendCell}
+    </tr>`;
+  }).join('');
+
+  return `
+  <div class="card mt">
+    <div class="card-title">Evolution by participant</div>
+    <div style="overflow-x:auto">
+      <table class="responses-table longi-table">
+        <thead><tr><th>Participant</th>${headers}<th>Trend</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
 function renderResults() {
   const el = document.getElementById('results-body');
 
@@ -168,7 +228,8 @@ function renderResults() {
         </tbody>
       </table>
     </div>
-  </div>`;
+  </div>
+  ${buildLongitudinalSection(ct, roundList)}`;
 }
 
 window.selectResultTeam = function (id) {

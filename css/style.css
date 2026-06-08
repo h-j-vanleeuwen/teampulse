@@ -215,6 +215,11 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 
 .confetti-tri{position:fixed;z-index:300;pointer-events:none;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:7px solid var(--c);transform:translate(-50%,-50%);animation:confettiPop 0.65s ease-out forwards;will-change:transform,opacity;}
 @keyframes confettiPop{0%{transform:translate(-50%,-50%) translate(0,0) rotate(0) scale(1);opacity:1;}100%{transform:translate(-50%,-50%) translate(var(--dx),var(--dy)) rotate(var(--rot)) scale(0.5);opacity:0;}}
 
+/* LONGITUDINAL VIEW */
+.longi-table .longi-row{transition:background 0.15s;cursor:default;}
+.longi-table .longi-row:hover{background:var(--surface2);}
+.trend-badge{font-size:13px;font-weight:700;letter-spacing:-0.01em;}
+
 /* A11Y - respect reduced-motion */
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:0.001ms!important;animation-iteration-count:1!important;transition-duration:0.001ms!important;}

@@ -1,6 +1,11 @@
 import { getResponses } from './api.js';
 import { Qs, CAT, COL } from './config.js';
 import { state } from './state.js';
+import { buildPyramidData } from './pyramid.js';
+
+// Snapshot of the currently rendered round, so the pyramid modal can rebuild
+// itself from the exact scores on screen without re-walking the state tree.
+let lastPyramidContext = null;
 
 function escapeHtml(s) {
   return String(s)
@@ -34,6 +39,104 @@ function ext(sc, dir) {
   });
   return name;
 }
+
+// The pyramid is a single triangle sliced horizontally. The apex band is
+// taller (so its base is wide enough to hold its content) while the lower
+// bands share the rest evenly. Sides stay perfectly straight.
+const PYRAMID_APEX_BOTTOM = 0.34;
+const PYRAMID_HEIGHT_PX = 430;
+
+// Returns the top/bottom width fractions (0-1 of full width) of each band,
+// from apex (topIndex 0) to base.
+function pyramidBandFractions(topIndex, total) {
+  const rest = (1 - PYRAMID_APEX_BOTTOM) / (total - 1);
+  const bottom = topIndex === 0 ? PYRAMID_APEX_BOTTOM : PYRAMID_APEX_BOTTOM + rest * topIndex;
+  const top = topIndex === 0 ? 0 : PYRAMID_APEX_BOTTOM + rest * (topIndex - 1);
+  return { top, bottom };
+}
+
+// Builds the clip-path that carves one band, given its width fractions.
+function pyramidClipPath(top, bottom) {
+  const halfTop = 50 * top;
+  const halfBot = 50 * bottom;
+  if (top === 0) {
+    return `polygon(50% 0%, ${50 + halfBot}% 100%, ${50 - halfBot}% 100%)`;
+  }
+  return `polygon(${50 - halfTop}% 0%, ${50 + halfTop}% 0%, ${50 + halfBot}% 100%, ${50 - halfBot}% 100%)`;
+}
+
+function buildPyramidContent(scores) {
+  const { levels, priorityKey } = buildPyramidData(scores);
+  const total = levels.length;
+  // Render apex first (top of the stack) down to the foundation.
+  const rows = [...levels].reverse().map((stage, topIndex) => {
+    const { top, bottom } = pyramidBandFractions(topIndex, total);
+    const clip = pyramidClipPath(top, bottom);
+    const rowHeight = Math.round((bottom - top) * PYRAMID_HEIGHT_PX);
+    const scoreText = stage.score !== null ? stage.score.toFixed(1) : '-';
+    const priorityChip = stage.isPriority
+      ? '<span class="pyramid-flag">Priorité</span>'
+      : '';
+    return `<div class="pyramid-row pyr-l${stage.level} status-${stage.status} ${stage.isPriority ? 'is-priority' : ''}" style="clip-path:${clip};height:${rowHeight}px">
+      <div class="pyramid-inner">
+        <span class="pyramid-num">${String(stage.level).padStart(2, '0')}</span>
+        <span class="pyramid-text">
+          <span class="pyramid-label">${stage.labelFr}${priorityChip}</span>
+          <span class="pyramid-sub">${stage.labelEn}</span>
+        </span>
+        <span class="pyramid-score">${scoreText}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  const priorityStage = levels.find(s => s.key === priorityKey);
+  const caption = priorityStage
+    ? `Levier prioritaire : <strong>${priorityStage.labelFr}</strong> - l'étage fragile le plus bas. On consolide de la base vers le sommet.`
+    : 'Tous les étages sont sains. La base de l\'équipe est solide.';
+
+  return `
+    <div class="pyramid">${rows}</div>
+    <div class="pyramid-caption">${caption}</div>
+    <div class="pyramid-legend">
+      <span class="legend-item"><span class="legend-dot status-healthy"></span>Sain (&ge;3.5)</span>
+      <span class="legend-item"><span class="legend-dot status-fragile"></span>Fragile (2.5-3.5)</span>
+      <span class="legend-item"><span class="legend-dot status-critical"></span>Critique (&lt;2.5)</span>
+    </div>`;
+}
+
+window.showPyramid = function () {
+  if (!lastPyramidContext) return;
+  const { scores, teamName, roundLabel, responseCount } = lastPyramidContext;
+
+  let overlay = document.getElementById('pyramid-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'pyramid-overlay';
+    overlay.className = 'info-overlay';
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) closePyramid();
+    });
+    document.body.appendChild(overlay);
+  }
+
+  overlay.innerHTML = `
+    <div class="info-modal pyramid-modal">
+      <button class="info-close" onclick="closePyramid()" aria-label="Close">&times;</button>
+      <div class="info-section-title" style="margin-top:0">Pyramide de Lencioni</div>
+      <div class="info-meta" style="margin-bottom:1rem">
+        <div><span class="info-meta-label">Équipe</span>${escapeHtml(teamName)}</div>
+        <div><span class="info-meta-label">Round</span>${escapeHtml(roundLabel)}</div>
+        <div><span class="info-meta-label">Réponses</span>${responseCount}</div>
+      </div>
+      ${buildPyramidContent(scores)}
+    </div>`;
+  overlay.style.display = 'flex';
+};
+
+window.closePyramid = function () {
+  const overlay = document.getElementById('pyramid-overlay');
+  if (overlay) overlay.style.display = 'none';
+};
 
 export async function fetchResults() {
   document.getElementById('results-body').innerHTML =
@@ -142,15 +245,39 @@ function renderResults() {
   const vals = Object.values(sc).filter(v => v !== null);
   const ov = vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
 
+  lastPyramidContext = {
+    scores: sc,
+    teamName: ct.name,
+    roundLabel: rRound ? rRound.label : '-',
+    responseCount: rResp.length,
+  };
+
+  const printDate = new Date().toLocaleDateString();
+  const compareMeta = cRound ? ` <span style="opacity:0.6">vs</span> <strong>${escapeHtml(cRound.label)}</strong>` : '';
+
   el.innerHTML = `
-  <div class="card">
+  <div class="print-header">
+    <div class="print-header-brand">
+      <div class="print-header-mark"></div>
+      <div class="print-header-name">Team<span>Pulse</span></div>
+      <div class="print-header-title">Team Health Assessment</div>
+    </div>
+    <div class="print-header-meta">
+      <span>Team: <strong>${escapeHtml(ct.name)}</strong></span>
+      <span>Round: <strong>${rRound ? escapeHtml(rRound.label) : '-'}</strong>${compareMeta}</span>
+      <span>Responses: <strong>${rResp.length}</strong></span>
+      <span>Generated: <strong>${printDate}</strong></span>
+    </div>
+  </div>
+
+  <div class="card no-print">
     <div class="card-title">Team</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       ${teamList.map(t => `<button class="team-pill ${t.id === state.rTeamId ? 'active' : ''}" onclick="selectResultTeam('${t.id}')">${escapeHtml(t.name)}</button>`).join('')}
     </div>
   </div>
 
-  <div class="card mt">
+  <div class="card mt no-print">
     <div class="card-title">Round</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap${roundList.length > 1 ? ';margin-bottom:1rem' : ''}">
       ${roundList.map(r => `<button class="team-pill ${r.id === state.rRoundId ? 'active' : ''}" onclick="selectResultRound('${r.id}')">${escapeHtml(r.label)} <span style="opacity:0.6;font-size:11px">${r.responses.length}</span></button>`).join('')}
@@ -196,7 +323,13 @@ function renderResults() {
 
   <div class="card mt">
     <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
-      Individual responses <button class="btn btn-outline btn-sm" onclick="fetchResults()">Refresh</button>
+      Individual responses
+      <div class="no-print" style="display:flex;gap:6px">
+        <button class="btn btn-outline btn-sm" onclick="showPyramid()">Pyramide</button>
+        <button class="btn btn-outline btn-sm" onclick="exportCSV()">Export CSV</button>
+        <button class="btn btn-outline btn-sm" onclick="exportPDF()">Export PDF</button>
+        <button class="btn btn-outline btn-sm" onclick="fetchResults()">Refresh</button>
+      </div>
     </div>
     <div style="overflow-x:auto">
       <table class="responses-table">
@@ -213,7 +346,7 @@ function renderResults() {
             const rowId = 'comments-' + r.id;
             return `<tr>
               <td style="color:var(--ink3)">${i + 1}</td>
-              <td style="font-weight:500">${escapeHtml(r.first_name)} ${escapeHtml(r.last_name)}</td>
+              <td style="font-weight:500">${escapeHtml(r.first_name)} ${escapeHtml(r.last_name)} <button class="info-btn no-print" onclick="showResponseInfo('${r.id}')" title="Response details">&#9432;</button></td>
               <td style="color:var(--ink3)">${new Date(r.submitted_at).toLocaleDateString()}</td>
               ${Object.keys(CAT).map(cat => { const v = rs[cat]; return `<td><span class="score-pill ${v !== null ? 'score-' + Math.round(v) : ''}">${v !== null ? v.toFixed(1) : '-'}</span></td>`; }).join('')}
               <td><strong>${ov2 !== null ? ov2.toFixed(2) : '-'}</strong></td>
@@ -229,7 +362,9 @@ function renderResults() {
       </table>
     </div>
   </div>
-  ${buildLongitudinalSection(ct, roundList)}`;
+  ${buildLongitudinalSection(ct, roundList)}
+
+  <div class="print-footer">TeamPulse - Lencioni team health assessment - generated on ${printDate}</div>`;
 }
 
 window.selectResultTeam = function (id) {
@@ -257,3 +392,111 @@ window.toggleComments = function (rowId) {
 };
 
 window.fetchResults = fetchResults;
+
+window.exportCSV = function () {
+  const teamMap = {};
+  state.allResponses.forEach(r => {
+    if (!r.rounds) return;
+    const tid = r.rounds.team_id;
+    const tname = r.rounds.teams ? r.rounds.teams.name : 'Unknown';
+    if (!teamMap[tid]) teamMap[tid] = { id: tid, name: tname, rounds: {} };
+    const rid = r.rounds.id;
+    if (!teamMap[tid].rounds[rid]) teamMap[tid].rounds[rid] = { id: rid, label: r.rounds.label, responses: [] };
+    teamMap[tid].rounds[rid].responses.push(r);
+  });
+
+  const ct = teamMap[state.rTeamId];
+  if (!ct || !state.rRoundId) return;
+  const rRound = ct.rounds[state.rRoundId];
+  if (!rRound) return;
+
+  const catKeys = Object.keys(CAT);
+  const headers = ['Name', 'Date', ...Object.values(CAT), 'Avg'];
+
+  const rows = rRound.responses.map(r => {
+    const rs = calcScores([r]);
+    const vals = Object.values(rs).filter(v => v !== null);
+    const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+    return [
+      `"${r.first_name} ${r.last_name}"`,
+      new Date(r.submitted_at).toLocaleDateString(),
+      ...catKeys.map(cat => rs[cat] !== null ? rs[cat].toFixed(2) : ''),
+      avg !== null ? avg.toFixed(2) : '',
+    ];
+  });
+
+  const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `teampulse-${rRound.label.replace(/\s+/g, '-')}-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+window.showResponseInfo = function (id) {
+  const r = state.allResponses.find(x => x.id === id);
+  if (!r) return;
+
+  const scores = calcScores([r]);
+  const validScores = Object.values(scores).filter(v => v !== null);
+  const overall = validScores.length ? (validScores.reduce((a, b) => a + b, 0) / validScores.length) : null;
+  const teamName = r.rounds && r.rounds.teams ? r.rounds.teams.name : 'Unknown';
+  const roundLabel = r.rounds ? r.rounds.label : 'Unknown';
+  const submittedAt = new Date(r.submitted_at).toLocaleString();
+
+  const comments = Object.entries(r.answers || {})
+    .filter(([, a]) => a && typeof a === 'object' && a.comment && a.comment.trim())
+    .map(([qn, a]) => ({ q: Qs.find(q => q.n === Number(qn)), text: a.comment.trim() }))
+    .filter(c => c.q);
+
+  const scoreRows = Object.keys(CAT).map(cat => {
+    const v = scores[cat];
+    return `<div class="info-score-row">
+        <span class="info-score-label">${escapeHtml(CAT[cat])}</span>
+        <span class="score-pill ${v !== null ? 'score-' + Math.round(v) : ''}">${v !== null ? v.toFixed(1) : '-'}</span>
+      </div>`;
+  }).join('');
+
+  const commentsHtml = comments.length
+    ? comments.map(c => `<div class="comment-block"><div class="comment-q">Q${c.q.n} &mdash; ${escapeHtml(CAT[c.q.cat] || c.q.cat)}: "${escapeHtml(c.q.text)}"</div><div class="comment-text">${escapeHtml(c.text)}</div></div>`).join('')
+    : '<div class="text-sm" style="color:var(--ink3)">No comments for this response.</div>';
+
+  let overlay = document.getElementById('info-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'info-overlay';
+    overlay.className = 'info-overlay';
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) closeResponseInfo();
+    });
+    document.body.appendChild(overlay);
+  }
+
+  overlay.innerHTML = `
+    <div class="info-modal">
+      <button class="info-close" onclick="closeResponseInfo()" aria-label="Close">&times;</button>
+      <div class="info-name">${escapeHtml(r.first_name)} ${escapeHtml(r.last_name)}</div>
+      <div class="info-meta">
+        <div><span class="info-meta-label">Team</span>${escapeHtml(teamName)}</div>
+        <div><span class="info-meta-label">Round</span>${escapeHtml(roundLabel)}</div>
+        <div><span class="info-meta-label">Submitted</span>${escapeHtml(submittedAt)}</div>
+        <div><span class="info-meta-label">Overall</span>${overall !== null ? overall.toFixed(2) : '-'}</div>
+      </div>
+      <div class="info-section-title">Scores by dimension</div>
+      <div class="info-scores">${scoreRows}</div>
+      <div class="info-section-title">Comments</div>
+      <div class="info-comments">${commentsHtml}</div>
+    </div>`;
+  overlay.style.display = 'flex';
+};
+
+window.closeResponseInfo = function () {
+  const overlay = document.getElementById('info-overlay');
+  if (overlay) overlay.style.display = 'none';
+};
+
+window.exportPDF = function () {
+  window.print();
+};

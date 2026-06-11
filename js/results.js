@@ -40,6 +40,123 @@ function ext(sc, dir) {
   return name;
 }
 
+// Calculates standard deviation per category across all respondents.
+function calcDispersion(responses) {
+  const out = {};
+  Object.keys(CAT).forEach(cat => {
+    const catQs = Qs.filter(q => q.cat === cat);
+    const vals = [];
+    responses.forEach(r => catQs.forEach(q => {
+      const a = r.answers[q.n];
+      const v = a && typeof a === 'object' ? a.score : a;
+      if (v !== undefined && v !== null) vals.push(Number(v));
+    }));
+    if (vals.length < 2) { out[cat] = null; return; }
+    const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+    out[cat] = Math.sqrt(vals.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / vals.length);
+  });
+  return out;
+}
+
+// Computes average score per question across all respondents.
+function calcQuestionStats(responses) {
+  const stats = {};
+  Qs.forEach(q => {
+    const vals = [];
+    responses.forEach(r => {
+      const a = r.answers[q.n];
+      const v = a && typeof a === 'object' ? a.score : a;
+      if (v !== undefined && v !== null) vals.push(Number(v));
+    });
+    if (vals.length) stats[q.n] = { q, avg: vals.reduce((a, b) => a + b, 0) / vals.length };
+  });
+  return stats;
+}
+
+// Returns a dispersion badge HTML string based on standard deviation.
+function dispBadge(d) {
+  if (d === null) return '';
+  if (d < 0.7) return '<span class="disp-badge disp-ok">Consensuel</span>';
+  if (d < 1.2) return '<span class="disp-badge disp-mid">Partagé</span>';
+  return '<span class="disp-badge disp-bad">Divergent</span>';
+}
+
+// Maps participant full names to anonymous aliases (Participant A, B, C...).
+function buildAliasMap(responses) {
+  const names = [...new Set(responses.map(r => `${r.first_name} ${r.last_name}`))].sort();
+  return Object.fromEntries(names.map((n, i) => [n, `Participant ${String.fromCharCode(65 + i)}`]));
+}
+
+function buildSynthesisBlock(sc, dispersion) {
+  const catKeys = Object.keys(CAT);
+  const forces = catKeys.filter(c => sc[c] !== null && sc[c] >= 3.5).sort((a, b) => sc[b] - sc[a]);
+  const fragilites = catKeys.filter(c => sc[c] !== null && sc[c] < 3.0).sort((a, b) => sc[a] - sc[b]);
+  const divergences = catKeys.filter(c => dispersion[c] !== null && dispersion[c] > 1.2);
+
+  const renderItems = (items, icon, cls) => items.length
+    ? items.slice(0, 2).map(c => `<div class="synth-item ${cls}"><span class="synth-icon">${icon}</span>${escapeHtml(CAT[c])}<span class="synth-score">${sc[c].toFixed(1)}</span></div>`).join('')
+    : `<div class="synth-empty">-</div>`;
+
+  const renderDivItems = items => items.length
+    ? items.slice(0, 2).map(c => `<div class="synth-item synth-div"><span class="synth-icon">↔</span>${escapeHtml(CAT[c])}</div>`).join('')
+    : `<div class="synth-empty">Opinions alignées</div>`;
+
+  return `
+  <div class="card mt synth-card">
+    <div class="card-title">Synthèse</div>
+    <div class="synth-grid">
+      <div class="synth-col">
+        <div class="synth-col-title synth-forces-title">Forces</div>
+        ${renderItems(forces, '✓', 'synth-force')}
+      </div>
+      <div class="synth-col">
+        <div class="synth-col-title synth-fragilites-title">Fragilités</div>
+        ${renderItems(fragilites, '!', 'synth-fragile')}
+      </div>
+      <div class="synth-col">
+        <div class="synth-col-title synth-divergences-title">Divergences</div>
+        ${renderDivItems(divergences)}
+      </div>
+    </div>
+  </div>`;
+}
+
+function buildTopBottomSection(qStats) {
+  const cols = Object.keys(CAT).map(cat => {
+    const catList = Object.values(qStats).filter(s => s.q.cat === cat);
+    if (catList.length < 2) return '';
+
+    const sorted = [...catList].sort((a, b) => b.avg - a.avg);
+    const top = sorted.slice(0, 2);
+    const bottom = sorted.slice(-2).reverse();
+
+    const renderRow = (s, type) => {
+      const icon = type === 'top' ? '▲' : '▼';
+      const cls = type === 'top' ? 'topbot-up' : 'topbot-down';
+      return `<div class="topbot-q-row ${cls}">
+        <span class="topbot-icon">${icon}</span>
+        <span class="topbot-text">${escapeHtml(s.q.text)}</span>
+        <span class="topbot-score">${s.avg.toFixed(1)}</span>
+      </div>`;
+    };
+
+    return `<div class="topbot-cat">
+      <div class="topbot-cat-title">${escapeHtml(CAT[cat])}</div>
+      ${top.map(s => renderRow(s, 'top')).join('')}
+      <div class="topbot-sep"></div>
+      ${bottom.map(s => renderRow(s, 'bottom')).join('')}
+    </div>`;
+  }).filter(Boolean).join('');
+
+  if (!cols) return '';
+
+  return `
+  <div class="card mt">
+    <div class="card-title">Questions saillantes par dimension</div>
+    <div class="topbot-grid">${cols}</div>
+  </div>`;
+}
+
 // The pyramid is a single triangle sliced horizontally. The apex band is
 // taller (so its base is wide enough to hold its content) while the lower
 // bands share the rest evenly. Sides stay perfectly straight.
@@ -153,10 +270,17 @@ export async function fetchResults() {
 function buildLongitudinalSection(ct, roundList) {
   const participantMap = {};
 
+  // Build alias map from all participants across all rounds of this team.
+  const allNames = [];
+  roundList.forEach(round => round.responses.forEach(r => allNames.push(`${r.first_name} ${r.last_name}`)));
+  const aliasMap = Object.fromEntries(
+    [...new Set(allNames)].sort().map((n, i) => [n, `Participant ${String.fromCharCode(65 + i)}`])
+  );
+
   roundList.forEach(round => {
     round.responses.forEach(r => {
       const key = `${r.first_name} ${r.last_name}`;
-      if (!participantMap[key]) participantMap[key] = { name: key, rounds: {} };
+      if (!participantMap[key]) participantMap[key] = { name: aliasMap[key] || key, rounds: {} };
       const scores = calcScores([r]);
       const vals = Object.values(scores).filter(v => v !== null);
       const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
@@ -242,6 +366,9 @@ function renderResults() {
   const cResp = cRound ? cRound.responses : [];
   const sc = calcScores(rResp);
   const cSc = cRound ? calcScores(cResp) : null;
+  const dispersion = calcDispersion(rResp);
+  const qStats = calcQuestionStats(rResp);
+  const aliasMap = buildAliasMap(rResp);
   const vals = Object.values(sc).filter(v => v !== null);
   const ov = vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
 
@@ -290,6 +417,8 @@ function renderResults() {
     </div>` : ''}
   </div>
 
+  ${buildSynthesisBlock(sc, dispersion)}
+
   <div class="stats-grid mt">
     <div class="stat-card"><div class="stat-label">Responses</div><div class="stat-value">${rResp.length}</div></div>
     <div class="stat-card"><div class="stat-label">Overall avg</div><div class="stat-value">${ov.toFixed(1)}<span class="stat-max">/5</span></div></div>
@@ -310,7 +439,7 @@ function renderResults() {
         const p = s !== null ? (s / 5 * 100).toFixed(1) : 0;
         const cp = cs !== null ? (cs / 5 * 100).toFixed(1) : 0;
         return `<div class="bar-row">
-          <div class="bar-label">${label}</div>
+          <div class="bar-label">${label}${dispBadge(dispersion[cat])}</div>
           <div class="bar-track">
             ${cs !== null ? `<div class="bar-fill2" style="width:${cp}%;background:${COL[cat]}"></div>` : ''}
             <div class="bar-fill" style="width:${p}%;background:${COL[cat]}"><span>${s !== null ? s.toFixed(2) : '-'}</span></div>
@@ -320,6 +449,8 @@ function renderResults() {
       }).join('')}
     </div>
   </div>
+
+  ${buildTopBottomSection(qStats)}
 
   <div class="card mt">
     <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
@@ -333,12 +464,13 @@ function renderResults() {
     </div>
     <div style="overflow-x:auto">
       <table class="responses-table">
-        <thead><tr><th>#</th><th>Name</th><th>Date</th>${Object.values(CAT).map(l => `<th>${l}</th>`).join('')}<th>Avg</th><th>Notes</th></tr></thead>
+        <thead><tr><th>#</th><th>Participant</th><th>Date</th>${Object.values(CAT).map(l => `<th>${l}</th>`).join('')}<th>Avg</th><th>Notes</th></tr></thead>
         <tbody>
           ${rResp.map((r, i) => {
             const rs = calcScores([r]);
             const v2 = Object.values(rs).filter(v => v !== null);
             const ov2 = v2.length ? (v2.reduce((a, b) => a + b, 0) / v2.length) : null;
+            const alias = aliasMap[`${r.first_name} ${r.last_name}`] || `Participant ${i + 1}`;
             const comments = Object.entries(r.answers || {})
               .filter(([, a]) => a && typeof a === 'object' && a.comment && a.comment.trim())
               .map(([qn, a]) => ({ q: Qs.find(q => q.n === Number(qn)), text: a.comment.trim() }))
@@ -346,7 +478,7 @@ function renderResults() {
             const rowId = 'comments-' + r.id;
             return `<tr>
               <td style="color:var(--ink3)">${i + 1}</td>
-              <td style="font-weight:500">${escapeHtml(r.first_name)} ${escapeHtml(r.last_name)} <button class="info-btn no-print" onclick="showResponseInfo('${r.id}')" title="Response details">&#9432;</button></td>
+              <td style="font-weight:500">${escapeHtml(alias)} <button class="info-btn no-print" onclick="showResponseInfo('${r.id}')" title="Response details">&#9432;</button></td>
               <td style="color:var(--ink3)">${new Date(r.submitted_at).toLocaleDateString()}</td>
               ${Object.keys(CAT).map(cat => { const v = rs[cat]; return `<td><span class="score-pill ${v !== null ? 'score-' + Math.round(v) : ''}">${v !== null ? v.toFixed(1) : '-'}</span></td>`; }).join('')}
               <td><strong>${ov2 !== null ? ov2.toFixed(2) : '-'}</strong></td>
@@ -411,14 +543,16 @@ window.exportCSV = function () {
   if (!rRound) return;
 
   const catKeys = Object.keys(CAT);
-  const headers = ['Name', 'Date', ...Object.values(CAT), 'Avg'];
+  const headers = ['Participant', 'Date', ...Object.values(CAT), 'Avg'];
+  const aliasMap = buildAliasMap(rRound.responses);
 
-  const rows = rRound.responses.map(r => {
+  const rows = rRound.responses.map((r, i) => {
     const rs = calcScores([r]);
     const vals = Object.values(rs).filter(v => v !== null);
     const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+    const alias = aliasMap[`${r.first_name} ${r.last_name}`] || `Participant ${i + 1}`;
     return [
-      `"${r.first_name} ${r.last_name}"`,
+      `"${alias}"`,
       new Date(r.submitted_at).toLocaleDateString(),
       ...catKeys.map(cat => rs[cat] !== null ? rs[cat].toFixed(2) : ''),
       avg !== null ? avg.toFixed(2) : '',

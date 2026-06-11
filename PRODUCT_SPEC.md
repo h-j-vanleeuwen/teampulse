@@ -8,7 +8,7 @@
 
 | Périmètre | État |
 |---|---|
-| MVP Page Résultats | ~35% implémenté |
+| MVP Page Résultats | ~55% implémenté |
 | V2 Fonctionnalités avancées | ~10% implémenté |
 
 ---
@@ -32,25 +32,25 @@
 | Score moyen par niveau | ✅ Fait | Affiché sur chaque bande |
 | Code couleur santé (sain/fragile/critique) | ✅ Fait | 3 états avec couleurs |
 | Levier prioritaire identifié | ✅ Fait | Caption + chip "Priorité" sur l'étage le plus fragile |
-| Indice d'accord / dispersion par niveau | ❌ Manquant | Aucun calcul d'écart-type ou variance actuellement |
+| Indice d'accord / dispersion par niveau | ✅ Fait | Badge Consensuel/Partagé/Divergent sur chaque barre (stddev) |
 
 ### Synthèse rapide (bloc narratif)
 
 | Élément | Statut | Note |
 |---|---|---|
-| 1-2 forces (niveaux sains) | ❌ Manquant | Section absente |
-| 1-2 fragilités (niveaux critiques) | ❌ Manquant | Section absente |
-| 1-2 divergences (fort écart entre participants) | ❌ Manquant | Section absente |
+| 1-2 forces (niveaux sains) | ✅ Fait | Bloc synthèse 3 colonnes, scores ≥ 3.5 |
+| 1-2 fragilités (niveaux critiques) | ✅ Fait | Bloc synthèse 3 colonnes, scores < 3.0 |
+| 1-2 divergences (fort écart entre participants) | ✅ Fait | Bloc synthèse 3 colonnes, stddev > 1.2 |
 
 ### Détail par niveau (section expandable)
 
 | Élément | Statut | Note |
 |---|---|---|
 | Score moyen par catégorie | ✅ Fait | Barres dans la vue rounds |
-| Indice d'accord par catégorie | ❌ Manquant | |
-| 2-3 questions avec scores les plus hauts | ❌ Manquant | On a accès aux scores bruts mais pas ce calcul |
-| 2-3 questions avec scores les plus bas | ❌ Manquant | |
-| 2-3 questions avec le plus d'écart entre participants | ❌ Manquant | |
+| Indice d'accord par catégorie | ✅ Fait | Badge dispersion sur chaque barre |
+| 2-3 questions avec scores les plus hauts | ✅ Fait | Section "Questions saillantes" - 2 hautes par dimension |
+| 2-3 questions avec scores les plus bas | ✅ Fait | Section "Questions saillantes" - 2 basses par dimension |
+| 2-3 questions avec le plus d'écart entre participants | ❌ Manquant | Calcul par question non encore fait (dispersion actuelle = par catégorie) |
 | Thèmes récurrents dans les verbatims | ❌ Manquant | Nécessite regroupement sémantique (NLP ou manuel) |
 | 2-3 citations anonymisées par thème | ❌ Manquant | Actuellement : verbatims listés par participant |
 
@@ -60,7 +60,7 @@
 |---|---|---|
 | Affichage des verbatims | ✅ Fait | Toggle par participant dans la vue résultats |
 | Regroupement par thème (pas liste brute) | ❌ Manquant | Actuellement classés par participant, pas thème |
-| Anonymisation (pas de nom visible) | ❌ Manquant | Le nom du répondant est actuellement visible |
+| Anonymisation (pas de nom visible) | ✅ Fait | Noms remplacés par "Participant A/B/C..." dans le tableau et la vue longitudinale |
 | Wording en mode "perception" | ❌ Manquant | Aucun wording particulier, libellés génériques |
 
 ---
@@ -92,15 +92,14 @@ Ces fonctionnalités existent dans l'app mais ne sont pas mentionnées dans le b
 
 ---
 
-## Récapitulatif des lacunes MVP critiques
+## Récapitulatif des lacunes MVP restantes
 
 Par ordre de priorité pour atteindre le MVP :
 
-1. **Indice d'accord / dispersion** - calcul d'écart-type par niveau et par question (bloque synthèse + divergences + carte V2)
-2. **Top/bottom questions par niveau** - identifier les 2-3 hautes et basses par catégorie
-3. **Synthèse rapide** - bloc forces / fragilités / divergences (dépend de #1)
-4. **Verbatims anonymisés et groupés par thème** - supprimer le nom, regrouper sémantiquement
-5. **Taux de participation** - stocker le nombre attendu de participants par round
+1. **Verbatims groupés par thème** - regroupement sémantique (décision PO : manuel ou NLP ?)
+2. **Taux de participation** - stocker le nb attendu de participants par round (champ admin)
+3. **Dispersion par question** - actuellement calculée par catégorie, pas encore par question individuelle
+4. **Wording en mode "perception"** - libellés à reformuler
 
 ---
 

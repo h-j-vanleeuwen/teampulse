@@ -144,8 +144,12 @@ window.setScore = function (qn, val) {
   state.sv.answers[qn].score = val;
   const commentEl = document.getElementById('q-comment-' + qn);
   if (commentEl) state.sv.answers[qn].comment = commentEl.value;
-  const activeQs = Qs.filter(q => state.sv.round.questions.includes(q.n));
-  renderSvQ(document.getElementById('survey-body'), activeQs);
+  // Update selection in place to avoid re-rendering the whole card on each click
+  document.querySelectorAll('.scale-row .scale-btn').forEach((btn, idx) => {
+    btn.classList.toggle('selected', idx + 1 === val);
+  });
+  const nextBtn = document.getElementById('nxt');
+  if (nextBtn) nextBtn.disabled = false;
 };
 
 window.svBack = function () {

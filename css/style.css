@@ -253,6 +253,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 
 .pin-err{color:var(--red);font-size:13px;min-height:20px;margin-top:4px;}
 .pin-session-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;background:var(--green-bg);color:var(--green);font-size:12px;font-weight:600;cursor:pointer;border:1px solid rgba(21,128,61,0.2);font-family:var(--font-body);}
 .pin-session-badge:hover{background:#dcefe0;}
+.auth-email-input{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:15px;font-family:var(--font-body);background:var(--surface2);color:var(--ink);box-sizing:border-box;}
+.auth-email-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(var(--accent-rgb,30,143,206),0.15);}
 
 /* CONFETTI (score-pick reward) */
 .confetti-tri{position:fixed;z-index:300;pointer-events:none;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:7px solid var(--c);transform:translate(-50%,-50%);animation:confettiPop 0.65s ease-out forwards;will-change:transform,opacity;}

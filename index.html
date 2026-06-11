@@ -17,44 +17,25 @@
     <button id="admin-badge" class="pin-session-badge" style="display:none" onclick="lockAdmin()" title="Click to lock">&#128275; Admin</button>
     <div class="nav-tabs">
       <button class="nav-tab" onclick="showPageGuarded('admin')">Admin</button>
-      <button class="nav-tab active" onclick="showPage('survey')">Survey</button>
       <button class="nav-tab" onclick="showPageGuarded('results')">Results</button>
     </div>
   </div>
 </nav>
 
-<!-- PIN OVERLAY -->
-<div id="pin-overlay" class="pin-overlay" style="display:none">
-  <div class="pin-box">
+<!-- AUTH OVERLAY -->
+<div id="auth-overlay" class="pin-overlay" style="display:none">
+  <div class="pin-box" id="auth-box-login">
     <div class="pin-icon">&#128274;</div>
-    <div class="pin-title" id="pin-title">Admin access</div>
-    <div class="pin-sub">Enter your 4-digit admin PIN.</div>
-    <div class="pin-dots">
-      <div class="pin-dot" id="pd0"></div>
-      <div class="pin-dot" id="pd1"></div>
-      <div class="pin-dot" id="pd2"></div>
-      <div class="pin-dot" id="pd3"></div>
-    </div>
-    <div class="pin-keypad">
-      <button class="pin-key" onclick="pinKey('1')">1</button>
-      <button class="pin-key" onclick="pinKey('2')">2</button>
-      <button class="pin-key" onclick="pinKey('3')">3</button>
-      <button class="pin-key" onclick="pinKey('4')">4</button>
-      <button class="pin-key" onclick="pinKey('5')">5</button>
-      <button class="pin-key" onclick="pinKey('6')">6</button>
-      <button class="pin-key" onclick="pinKey('7')">7</button>
-      <button class="pin-key" onclick="pinKey('8')">8</button>
-      <button class="pin-key" onclick="pinKey('9')">9</button>
-      <button class="pin-key" onclick="pinKey('')"></button>
-      <button class="pin-key" onclick="pinKey('0')">0</button>
-      <button class="pin-key del" onclick="pinKey('del')">&#9003;</button>
-    </div>
-    <div class="pin-err" id="pin-err"></div>
-    <div style="margin-top:1rem">
-      <button class="btn btn-outline btn-sm" onclick="cancelPin()">Cancel</button>
-    </div>
-    <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border2)">
-      <div style="font-size:12px;color:var(--ink3)">Default PIN is 1234. Change it in the Admin panel.</div>
+    <div class="pin-title">Acc&#232;s admin</div>
+    <div class="pin-sub">Connecte-toi avec tes identifiants.</div>
+    <input type="email" id="auth-email" class="auth-email-input" placeholder="Email" autocomplete="email"
+      onkeydown="if(event.key==='Enter') document.getElementById('auth-password').focus()">
+    <input type="password" id="auth-password" class="auth-email-input" placeholder="Mot de passe" autocomplete="current-password"
+      style="margin-top:8px" onkeydown="if(event.key==='Enter') submitLogin()">
+    <div class="pin-err" id="auth-err"></div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:1.25rem">
+      <button class="btn btn-outline btn-sm" onclick="cancelAuth()">Annuler</button>
+      <button class="btn btn-primary btn-sm" onclick="submitLogin()">Se connecter</button>
     </div>
   </div>
 </div>
@@ -114,28 +95,14 @@
   </div>
 
   <div class="card mt">
-    <div class="card-title">Admin PIN</div>
-    <div class="text-sm" style="margin-bottom:12px">Default PIN is <strong>1234</strong>. Change it here.</div>
-    <div id="pin-status-box"></div>
-    <div id="pin-set-form">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:320px;margin-bottom:10px">
-        <div>
-          <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">New PIN</label>
-          <input type="password" id="pin-a" maxlength="4" placeholder="4 digits" inputmode="numeric" pattern="[0-9]*">
-        </div>
-        <div>
-          <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Confirm PIN</label>
-          <input type="password" id="pin-b" maxlength="4" placeholder="4 digits" inputmode="numeric" pattern="[0-9]*">
-        </div>
-      </div>
-      <div id="pin-set-err" class="alert alert-error" style="display:none;max-width:320px;margin-bottom:8px"></div>
-      <button class="btn btn-primary btn-sm" onclick="savePin()">Set PIN</button>
-    </div>
+    <div class="card-title">Session</div>
+    <div class="text-sm" style="margin-bottom:12px;color:var(--ink2)">Authentifi&#233; via Supabase Auth.</div>
+    <button class="btn btn-outline btn-sm" onclick="lockAdmin()">Se d&#233;connecter</button>
   </div>
 </div>
 
 <!-- SURVEY PAGE -->
-<div id="page-survey" class="page active">
+<div id="page-survey" class="page">
   <div class="survey-container">
     <div class="survey-header">
       <div class="survey-logo">Team<span>Pulse</span></div>

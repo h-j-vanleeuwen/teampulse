@@ -1,17 +1,35 @@
-import { CAT, COL } from './config.js';
+import { COL } from './config.js';
 
 // Lencioni pyramid : levels are stacked, each one rests on the one below it.
 // Index 0 is the foundation (Trust), last index is the apex (Results).
 // We repair a team from the bottom up, hence this exact order matters.
 const PYRAMID_ORDER = ['Confiance', 'Conflit', 'Engagement', 'Responsabilite', 'Resultats'];
 
-// French labels carry the accents the CAT keys cannot (Responsabilite -> Responsabilité).
-const LABEL_FR = {
+// Descriptor phrase shown above the key word (e.g. "Manque de" / "CONFIANCE").
+const LABEL_DESC = {
+  Confiance:      'Manque de',
+  Conflit:        'Peur de la',
+  Engagement:     'Absence',
+  Responsabilite: 'Évitement de la',
+  Resultats:      'Inattention portée aux',
+};
+
+// Key word shown in bold/uppercase on the second line.
+const LABEL_KEY = {
   Confiance:      'Confiance',
-  Conflit:        'Conflit',
-  Engagement:     'Engagement',
-  Responsabilite: 'Responsabilité',
+  Conflit:        'Confrontation',
+  Engagement:     "d'Engagement",
+  Responsabilite: 'Responsabilisation',
   Resultats:      'Résultats',
+};
+
+// English dysfunction names shown as sublabel.
+const LABEL_EN = {
+  Confiance:      'Absence of Trust',
+  Conflit:        'Fear of Conflict',
+  Engagement:     'Lack of Commitment',
+  Responsabilite: 'Avoidance of Accountability',
+  Resultats:      'Inattention to Results',
 };
 
 // One-line meaning of each level, used as a caption in the visual / PDF later.
@@ -61,8 +79,10 @@ export function buildPyramidData(scores) {
     return {
       level: index + 1,
       key,
-      labelFr: LABEL_FR[key],
-      labelEn: CAT[key],
+      labelDesc: LABEL_DESC[key],
+      labelKey: LABEL_KEY[key],
+      labelFull: `${LABEL_DESC[key]} ${LABEL_KEY[key]}`,
+      labelEn: LABEL_EN[key],
       description: DESCRIPTION_FR[key],
       score,
       color: COL[key],

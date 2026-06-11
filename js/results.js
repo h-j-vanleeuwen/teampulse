@@ -43,7 +43,7 @@ function ext(sc, dir) {
 // The pyramid is a single triangle sliced horizontally. The apex band is
 // taller (so its base is wide enough to hold its content) while the lower
 // bands share the rest evenly. Sides stay perfectly straight.
-const PYRAMID_APEX_BOTTOM = 0.34;
+const PYRAMID_APEX_BOTTOM = 0.38;
 const PYRAMID_HEIGHT_PX = 430;
 
 // Returns the top/bottom width fractions (0-1 of full width) of each band,
@@ -81,8 +81,8 @@ function buildPyramidContent(scores) {
       <div class="pyramid-inner">
         <span class="pyramid-num">${String(stage.level).padStart(2, '0')}</span>
         <span class="pyramid-text">
-          <span class="pyramid-label">${stage.labelFr}${priorityChip}</span>
-          <span class="pyramid-sub">${stage.labelEn}</span>
+          <span class="pyramid-desc">${stage.labelDesc}</span>
+          <span class="pyramid-key">${stage.labelKey}${priorityChip}</span>
         </span>
         <span class="pyramid-score">${scoreText}</span>
       </div>
@@ -91,7 +91,7 @@ function buildPyramidContent(scores) {
 
   const priorityStage = levels.find(s => s.key === priorityKey);
   const caption = priorityStage
-    ? `Levier prioritaire : <strong>${priorityStage.labelFr}</strong> - l'étage fragile le plus bas. On consolide de la base vers le sommet.`
+    ? `Levier prioritaire : <strong>${priorityStage.labelFull}</strong> - l'étage fragile le plus bas. On consolide de la base vers le sommet.`
     : 'Tous les étages sont sains. La base de l\'équipe est solide.';
 
   return `

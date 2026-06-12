@@ -239,7 +239,10 @@ window.showPyramid = function () {
   overlay.innerHTML = `
     <div class="info-modal pyramid-modal">
       <button class="info-close" onclick="closePyramid()" aria-label="Close">&times;</button>
-      <div class="info-section-title" style="margin-top:0">Pyramide de Lencioni</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.25rem">
+        <div class="info-section-title" style="margin:0">Pyramide de Lencioni</div>
+        <button class="btn btn-outline btn-sm" onclick="exportPyramidPDF()" style="font-size:12px">Export PDF</button>
+      </div>
       <div class="info-meta" style="margin-bottom:1rem">
         <div><span class="info-meta-label">Équipe</span>${escapeHtml(teamName)}</div>
         <div><span class="info-meta-label">Round</span>${escapeHtml(roundLabel)}</div>
@@ -458,7 +461,6 @@ function renderResults() {
       <div class="no-print" style="display:flex;gap:6px">
         <button class="btn btn-outline btn-sm" onclick="showPyramid()">Pyramide</button>
         <button class="btn btn-outline btn-sm" onclick="exportCSV()">Export CSV</button>
-        <button class="btn btn-outline btn-sm" onclick="exportPDF()">Export PDF</button>
         <button class="btn btn-outline btn-sm" onclick="fetchResults()">Refresh</button>
       </div>
     </div>
@@ -631,6 +633,219 @@ window.closeResponseInfo = function () {
   if (overlay) overlay.style.display = 'none';
 };
 
-window.exportPDF = function () {
-  window.print();
+// Draws the pyramid geometry directly to a canvas (avoids clip-path print issues).
+function buildPyramidCanvas(scores) {
+  const { levels, priorityKey } = buildPyramidData(scores);
+  const total = levels.length;
+  const SCALE = 2;
+  const W = 580;
+  const GAP = 3;
+
+  const bandRows = [...levels].reverse().map((stage, topIndex) => {
+    const { top, bottom } = pyramidBandFractions(topIndex, total);
+    return { ...stage, top, bottom, h: Math.round((bottom - top) * PYRAMID_HEIGHT_PX) };
+  });
+
+  const pyrH = bandRows.reduce((s, b) => s + b.h + GAP, 0) - GAP;
+  const canvas = document.createElement('canvas');
+  canvas.width = W * SCALE;
+  canvas.height = (pyrH + 90) * SCALE;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(SCALE, SCALE);
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, W, pyrH + 90);
+
+  const CX = W / 2;
+  const BAND_COLORS = ['#071440', '#0C2872', '#1451B8', '#1E8FCE', '#38C4DE'];
+  const STATUS_COLORS = { healthy: '#15803D', fragile: '#C2620E', critical: '#CB3F1C' };
+  const EL_GAP = 7;
+  const NUM_W = 26;
+  const CHIP_W = 46, CHIP_H = 14;
+  const SCORE_W = 36, SCORE_H = 20;
+
+  function rrect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function bandPath(top, bottom, h, y0) {
+    const hwTop = top * W / 2;
+    const hwBot = bottom * W / 2;
+    ctx.beginPath();
+    if (top === 0) {
+      ctx.moveTo(CX, y0);
+      ctx.lineTo(CX + hwBot, y0 + h);
+      ctx.lineTo(CX - hwBot, y0 + h);
+    } else {
+      ctx.moveTo(CX - hwTop, y0);
+      ctx.lineTo(CX + hwTop, y0);
+      ctx.lineTo(CX + hwBot, y0 + h);
+      ctx.lineTo(CX - hwBot, y0 + h);
+    }
+    ctx.closePath();
+  }
+
+  let y = 0;
+  bandRows.forEach(band => {
+    bandPath(band.top, band.bottom, band.h, y);
+    ctx.fillStyle = BAND_COLORS[band.level - 1];
+    ctx.fill();
+
+    ctx.save();
+    bandPath(band.top, band.bottom, band.h, y);
+    ctx.clip();
+
+    const tY = y + band.h - 18;
+
+    // Measure widths to lay out the group centered without any overlap
+    ctx.font = '700 12px Inter, system-ui, sans-serif';
+    const keyLabel = band.labelKey.toUpperCase();
+    const keyW = ctx.measureText(keyLabel).width;
+    const totalW = NUM_W + EL_GAP + keyW
+      + (band.isPriority ? EL_GAP + CHIP_W : 0)
+      + (band.score !== null ? EL_GAP + SCORE_W : 0);
+
+    let cx = CX - totalW / 2;
+
+    // Number
+    ctx.font = '800 18px Inter, system-ui, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(band.level).padStart(2, '0'), cx, tY);
+    cx += NUM_W + EL_GAP;
+
+    // Descriptor (small) stacked above Key (bold), both centered on the key column
+    const textCX = cx + keyW / 2;
+    ctx.font = '400 8px Inter, system-ui, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.82)';
+    ctx.textAlign = 'center';
+    ctx.fillText(band.labelDesc, textCX, tY - 10);
+    ctx.font = '700 12px Inter, system-ui, sans-serif';
+    ctx.fillStyle = '#fff';
+    ctx.fillText(keyLabel, textCX, tY + 3);
+    cx += keyW;
+
+    // PRIORITÉ chip — inside clip, right after the key text
+    if (band.isPriority) {
+      cx += EL_GAP;
+      rrect(cx, tY - CHIP_H / 2 + 3, CHIP_W, CHIP_H, 7);
+      ctx.fillStyle = 'rgba(255,255,255,0.92)';
+      ctx.fill();
+      ctx.font = '700 7px Inter, system-ui, sans-serif';
+      ctx.fillStyle = '#1A1A1A';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('PRIORITÉ', cx + CHIP_W / 2, tY + 3);
+      cx += CHIP_W;
+    }
+
+    // Score badge — always last, never overlaps anything
+    if (band.score !== null) {
+      cx += EL_GAP;
+      rrect(cx, tY - SCORE_H / 2, SCORE_W, SCORE_H, 10);
+      ctx.fillStyle = STATUS_COLORS[band.status] || 'rgba(255,255,255,0.25)';
+      ctx.fill();
+      ctx.font = '700 11px Inter, system-ui, sans-serif';
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(band.score.toFixed(1), cx + SCORE_W / 2, tY);
+    }
+
+    ctx.restore();
+    y += band.h + GAP;
+  });
+
+  // Caption
+  const priorityStage = levels.find(s => s.key === priorityKey);
+  const caption = priorityStage
+    ? `Levier prioritaire : ${priorityStage.labelFull} — l'étage fragile le plus bas.`
+    : "Tous les étages sont sains. La base de l'équipe est solide.";
+  ctx.font = '400 12px Inter, system-ui, sans-serif';
+  ctx.fillStyle = '#6A655B';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText(caption, CX, y + 10);
+
+  // Legend
+  const legendItems = [
+    { label: 'Sain (≥3.5)', color: '#15803D' },
+    { label: 'Fragile (2.5-3.5)', color: '#C2620E' },
+    { label: 'Critique (<2.5)', color: '#CB3F1C' },
+  ];
+  ctx.font = '400 12px Inter, system-ui, sans-serif';
+  const iGap = 18;
+  const iWidths = legendItems.map(it => 14 + 5 + ctx.measureText(it.label).width);
+  const legendTotalW = iWidths.reduce((a, b) => a + b, 0) + iGap * (legendItems.length - 1);
+  let lx = CX - legendTotalW / 2;
+  const ly = y + 40;
+  legendItems.forEach((item, i) => {
+    rrect(lx, ly - 6, 12, 12, 3);
+    ctx.fillStyle = item.color;
+    ctx.fill();
+    ctx.fillStyle = '#6A655B';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(item.label, lx + 17, ly);
+    lx += iWidths[i] + iGap;
+  });
+
+  return canvas;
+}
+
+window.exportPyramidPDF = function () {
+  if (!lastPyramidContext) return;
+  const { scores, teamName, roundLabel, responseCount } = lastPyramidContext;
+
+  const btn = document.querySelector('#pyramid-overlay [onclick="exportPyramidPDF()"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Génération...'; }
+
+  try {
+    const canvas = buildPyramidCanvas(scores);
+    const imgData = canvas.toDataURL('image/png');
+
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:0;height:0;border:0;';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(`<!DOCTYPE html><html><head>
+      <title>Pyramide de Lencioni — ${escapeHtml(teamName)} — ${escapeHtml(roundLabel)}</title>
+      <style>
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{background:#fff;padding:2cm;font-family:Inter,system-ui,sans-serif;}
+        h2{font-size:18px;font-weight:800;margin-bottom:0.4rem;}
+        .meta{font-size:13px;color:#6A655B;display:flex;gap:2rem;margin-bottom:1.5rem;}
+        .meta strong{color:#1A1A1A;}
+        img{max-width:100%;height:auto;display:block;}
+        @page{margin:1.5cm;}
+      </style>
+    </head><body>
+      <h2>Pyramide de Lencioni</h2>
+      <div class="meta">
+        <span>Équipe <strong>${escapeHtml(teamName)}</strong></span>
+        <span>Round <strong>${escapeHtml(roundLabel)}</strong></span>
+        <span>Réponses <strong>${responseCount}</strong></span>
+      </div>
+      <img src="${imgData}">
+    </body></html>`);
+    doc.close();
+
+    iframe.addEventListener('load', () => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+      setTimeout(() => iframe.remove(), 1000);
+    });
+  } catch (e) {
+    alert('Export échoué : ' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Export PDF'; }
+  }
 };

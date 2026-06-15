@@ -14,10 +14,15 @@
 <nav class="nav">
   <div class="nav-logo">Team<span>Pulse</span></div>
   <div style="display:flex;align-items:center;gap:12px;">
+    <div class="lang-switcher">
+      <button class="lang-btn" data-lang="fr" onclick="setLangAndRefresh('fr')">FR</button>
+      <button class="lang-btn" data-lang="en" onclick="setLangAndRefresh('en')">EN</button>
+      <button class="lang-btn" data-lang="es" onclick="setLangAndRefresh('es')">ES</button>
+    </div>
     <button id="admin-badge" class="pin-session-badge" style="display:none" onclick="lockAdmin()" title="Click to lock">&#128275; Admin</button>
     <div class="nav-tabs">
-      <button class="nav-tab" onclick="showPageGuarded('admin')">Admin</button>
-      <button class="nav-tab" onclick="showPageGuarded('results')">Results</button>
+      <button class="nav-tab" data-page="admin" onclick="showPageGuarded('admin')">Admin</button>
+      <button class="nav-tab" data-page="results" onclick="showPageGuarded('results')" data-i18n="nav.results">Results</button>
     </div>
   </div>
 </nav>
@@ -26,78 +31,78 @@
 <div id="auth-overlay" class="pin-overlay" style="display:none">
   <div class="pin-box" id="auth-box-login">
     <div class="pin-icon">&#128274;</div>
-    <div class="pin-title">Acc&#232;s admin</div>
-    <div class="pin-sub">Connecte-toi avec tes identifiants.</div>
-    <input type="email" id="auth-email" class="auth-email-input" placeholder="Email" autocomplete="email"
+    <div class="pin-title" data-i18n="auth.title">Admin access</div>
+    <div class="pin-sub" data-i18n="auth.sub">Sign in with your credentials.</div>
+    <input type="email" id="auth-email" class="auth-email-input" data-i18n-placeholder="auth.email" placeholder="Email" autocomplete="email"
       onkeydown="if(event.key==='Enter') document.getElementById('auth-password').focus()">
-    <input type="password" id="auth-password" class="auth-email-input" placeholder="Mot de passe" autocomplete="current-password"
+    <input type="password" id="auth-password" class="auth-email-input" data-i18n-placeholder="auth.password" placeholder="Password" autocomplete="current-password"
       style="margin-top:8px" onkeydown="if(event.key==='Enter') submitLogin()">
     <div class="pin-err" id="auth-err"></div>
     <div style="display:flex;gap:10px;justify-content:center;margin-top:1.25rem">
-      <button class="btn btn-outline btn-sm" onclick="cancelAuth()">Annuler</button>
-      <button class="btn btn-primary btn-sm" onclick="submitLogin()">Se connecter</button>
+      <button class="btn btn-outline btn-sm" onclick="cancelAuth()" data-i18n="auth.cancel">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="submitLogin()" data-i18n="auth.submit">Sign in</button>
     </div>
   </div>
 </div>
 
 <!-- ADMIN PAGE -->
 <div id="page-admin" class="page">
-  <div class="page-title">Admin panel</div>
-  <div class="page-sub">Manage teams, rounds, and question sets.</div>
+  <div class="page-title" data-i18n="admin.title">Admin panel</div>
+  <div class="page-sub" data-i18n="admin.sub">Manage teams, rounds, and question sets.</div>
 
   <div class="card">
-    <div class="card-title">Teams</div>
-    <div class="team-list" id="team-list"><div class="text-sm" style="color:var(--ink3)">Loading...</div></div>
+    <div class="card-title" data-i18n="admin.teams">Teams</div>
+    <div class="team-list" id="team-list"><div class="text-sm" style="color:var(--ink3)" data-i18n="admin.loading">Loading...</div></div>
     <div class="row">
-      <input type="text" id="new-team" placeholder="New team name..." style="max-width:260px" onkeydown="if(event.key==='Enter')addTeam()">
-      <button class="btn btn-outline btn-sm" onclick="addTeam()">+ Add team</button>
+      <input type="text" id="new-team" data-i18n-placeholder="admin.new_team" placeholder="New team name..." style="max-width:260px" onkeydown="if(event.key==='Enter')addTeam()">
+      <button class="btn btn-outline btn-sm" onclick="addTeam()" data-i18n="admin.add_team">+ Add team</button>
     </div>
   </div>
 
   <div class="card mt" id="rounds-card" style="display:none">
-    <div class="card-title">Rounds &mdash; <span id="rounds-team-name" style="color:var(--accent)"></span></div>
+    <div class="card-title"><span data-i18n="admin.rounds">Rounds</span> &mdash; <span id="rounds-team-name" style="color:var(--accent)"></span></div>
     <div class="round-list" id="round-list"></div>
     <div class="row">
-      <input type="text" id="new-round" placeholder="Round label (e.g. Round 1, Q1 2025)..." style="max-width:320px" onkeydown="if(event.key==='Enter')addRound()">
-      <button class="btn btn-outline btn-sm" onclick="addRound()">+ Add round</button>
+      <input type="text" id="new-round" data-i18n-placeholder="admin.new_round" placeholder="Round label (e.g. Round 1, Q1 2025)..." style="max-width:320px" onkeydown="if(event.key==='Enter')addRound()">
+      <button class="btn btn-outline btn-sm" onclick="addRound()" data-i18n="admin.add_round">+ Add round</button>
     </div>
   </div>
 
   <div class="card mt" id="round-qs-card" style="display:none">
     <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
-      <span>Questions &mdash; <span id="round-qs-label" style="color:var(--accent)"></span></span>
+      <span><span data-i18n="admin.questions">Questions</span> &mdash; <span id="round-qs-label" style="color:var(--accent)"></span></span>
       <span id="sel-count" style="font-size:12px;color:var(--ink3);font-weight:400"></span>
     </div>
     <div class="row" style="margin-bottom:10px">
-      <button class="btn btn-outline btn-sm" onclick="selectAll()">All</button>
-      <button class="btn btn-outline btn-sm" onclick="clearAll()">None</button>
+      <button class="btn btn-outline btn-sm" onclick="selectAll()" data-i18n="admin.all">All</button>
+      <button class="btn btn-outline btn-sm" onclick="clearAll()" data-i18n="admin.none">None</button>
       <div class="flex-1"></div>
-      <button class="btn btn-primary btn-sm" onclick="saveRoundQs()" id="save-qs-btn">Save questions</button>
+      <button class="btn btn-primary btn-sm" onclick="saveRoundQs()" id="save-qs-btn" data-i18n="admin.save_qs">Save questions</button>
     </div>
     <div class="q-filter">
-      <button class="q-filter-btn active" onclick="filterCat(this,'all')">All</button>
-      <button class="q-filter-btn" onclick="filterCat(this,'Confiance')">Trust</button>
-      <button class="q-filter-btn" onclick="filterCat(this,'Conflit')">Conflict</button>
-      <button class="q-filter-btn" onclick="filterCat(this,'Engagement')">Commitment</button>
-      <button class="q-filter-btn" onclick="filterCat(this,'Responsabilite')">Accountability</button>
-      <button class="q-filter-btn" onclick="filterCat(this,'Resultats')">Results</button>
+      <button class="q-filter-btn active" onclick="filterCat(this,'all')" data-i18n="admin.all">All</button>
+      <button class="q-filter-btn" onclick="filterCat(this,'Confiance')" data-i18n="cat.confiance">Trust</button>
+      <button class="q-filter-btn" onclick="filterCat(this,'Conflit')" data-i18n="cat.conflit">Conflict</button>
+      <button class="q-filter-btn" onclick="filterCat(this,'Engagement')" data-i18n="cat.engagement">Commitment</button>
+      <button class="q-filter-btn" onclick="filterCat(this,'Responsabilite')" data-i18n="cat.responsabilite">Accountability</button>
+      <button class="q-filter-btn" onclick="filterCat(this,'Resultats')" data-i18n="cat.resultats">Results</button>
     </div>
     <div class="q-list" id="q-list"></div>
   </div>
 
   <div class="card mt" id="round-link-card" style="display:none">
-    <div class="card-title">Survey link &mdash; <span id="link-round-label" style="color:var(--accent)"></span></div>
-    <div class="text-sm" style="margin-bottom:10px">Send this link to team members. It opens the survey pre-configured for this round.</div>
+    <div class="card-title"><span data-i18n="admin.survey_link">Survey link</span> &mdash; <span id="link-round-label" style="color:var(--accent)"></span></div>
+    <div class="text-sm" style="margin-bottom:10px" data-i18n="admin.link_desc">Send this link to team members. It opens the survey pre-configured for this round.</div>
     <div class="link-box">
       <span class="link-url" id="share-url">-</span>
-      <button class="btn btn-outline btn-sm" onclick="copyShare(this)">Copy</button>
+      <button class="btn btn-outline btn-sm" onclick="copyShare(this)" data-i18n="admin.copy">Copy</button>
     </div>
   </div>
 
   <div class="card mt">
-    <div class="card-title">Session</div>
-    <div class="text-sm" style="margin-bottom:12px;color:var(--ink2)">Authentifi&#233; via Supabase Auth.</div>
-    <button class="btn btn-outline btn-sm" onclick="lockAdmin()">Se d&#233;connecter</button>
+    <div class="card-title" data-i18n="admin.session">Session</div>
+    <div class="text-sm" style="margin-bottom:12px;color:var(--ink2)" data-i18n="admin.session_sub">Authenticated via Supabase Auth.</div>
+    <button class="btn btn-outline btn-sm" onclick="lockAdmin()" data-i18n="admin.logout">Sign out</button>
   </div>
 </div>
 
@@ -106,8 +111,8 @@
   <div class="survey-container">
     <div class="survey-header">
       <div class="survey-logo">Team<span>Pulse</span></div>
-      <div class="survey-title">Team Health Assessment</div>
-      <div class="survey-desc">Based on the Five Dysfunctions of a Team - Patrick Lencioni.<br>Rate each statement honestly from 1 (Never) to 5 (Always).</div>
+      <div class="survey-title" data-i18n="survey.title">Team Health Assessment</div>
+      <div class="survey-desc" data-i18n-html="survey.desc">Based on the Five Dysfunctions of a Team - Patrick Lencioni.<br>Rate each statement honestly from 1 (Never) to 5 (Always).</div>
     </div>
     <div id="survey-body"></div>
   </div>
@@ -115,8 +120,8 @@
 
 <!-- RESULTS PAGE -->
 <div id="page-results" class="page">
-  <div class="page-title">Results dashboard</div>
-  <div class="page-sub">Browse results by team and round.</div>
+  <div class="page-title" data-i18n="results.title">Results dashboard</div>
+  <div class="page-sub" data-i18n="results.sub">Browse results by team and round.</div>
   <div id="results-body"></div>
 </div>
 

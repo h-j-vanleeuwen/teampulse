@@ -1,6 +1,6 @@
 import { getTeams, addTeamDB, delTeamDB, getRounds, addRoundDB, updateRoundQs, delRoundDB } from './api.js';
-import { Qs } from './config.js';
 import { state } from './state.js';
+import { t, getQs } from './i18n.js';
 
 function escapeHtml(s) {
   return String(s)
@@ -25,21 +25,21 @@ export async function loadAll() {
 function renderTeams() {
   const el = document.getElementById('team-list');
   if (!state.teams.length) {
-    el.innerHTML = '<div class="text-sm" style="color:var(--ink3)">No teams yet.</div>';
+    el.innerHTML = `<div class="text-sm" style="color:var(--ink3)">${t('admin.no_teams')}</div>`;
     return;
   }
-  el.innerHTML = state.teams.map(t => `
-    <div class="team-chip ${t.id === state.activeTeamId ? 'active' : ''}" onclick="selectTeam('${t.id}')">
-      <span class="team-chip-name">${escapeHtml(t.name)}</span>
-      <button class="team-chip-del" onclick="event.stopPropagation();rmTeam('${t.id}','${escapeHtml(t.name)}')">x</button>
+  el.innerHTML = state.teams.map(t_ => `
+    <div class="team-chip ${t_.id === state.activeTeamId ? 'active' : ''}" onclick="selectTeam('${t_.id}')">
+      <span class="team-chip-name">${escapeHtml(t_.name)}</span>
+      <button class="team-chip-del" onclick="event.stopPropagation();rmTeam('${t_.id}','${escapeHtml(t_.name)}')">x</button>
     </div>`).join('');
 }
 
 window.selectTeam = function (id) {
   state.activeTeamId = id;
   state.activeRoundId = null;
-  const t = state.teams.find(t => t.id === id);
-  document.getElementById('rounds-team-name').textContent = t ? t.name : '';
+  const team = state.teams.find(t_ => t_.id === id);
+  document.getElementById('rounds-team-name').textContent = team ? team.name : '';
   document.getElementById('rounds-card').style.display = 'block';
   document.getElementById('round-qs-card').style.display = 'none';
   document.getElementById('round-link-card').style.display = 'none';
@@ -51,7 +51,7 @@ window.addTeam = async function () {
   const inp = document.getElementById('new-team');
   const name = inp.value.trim();
   if (!name) return;
-  if (state.teams.find(t => t.name === name)) {
+  if (state.teams.find(t_ => t_.name === name)) {
     inp.classList.add('input-error');
     setTimeout(() => inp.classList.remove('input-error'), 1500);
     return;
@@ -61,12 +61,12 @@ window.addTeam = async function () {
     inp.value = '';
     await loadAll();
   } catch (e) {
-    alert('Could not add team.');
+    alert(t('alert.add_team'));
   }
 };
 
 window.rmTeam = async function (id, name) {
-  if (!confirm(`Remove team "${name}" and all its rounds and responses?`)) return;
+  if (!confirm(t('confirm.remove_team', { name }))) return;
   try {
     await delTeamDB(id);
     if (state.activeTeamId === id) {
@@ -78,7 +78,7 @@ window.rmTeam = async function (id, name) {
     }
     await loadAll();
   } catch (e) {
-    alert('Could not remove team.');
+    alert(t('alert.remove_team'));
   }
 };
 
@@ -86,7 +86,7 @@ function renderRounds() {
   const el = document.getElementById('round-list');
   const teamRounds = state.rounds.filter(r => r.team_id === state.activeTeamId);
   if (!teamRounds.length) {
-    el.innerHTML = '<div class="text-sm" style="color:var(--ink3);margin-bottom:8px">No rounds yet.</div>';
+    el.innerHTML = `<div class="text-sm" style="color:var(--ink3);margin-bottom:8px">${t('admin.no_rounds')}</div>`;
     return;
   }
   el.innerHTML = teamRounds.map(r => `
@@ -104,7 +104,7 @@ window.selectRound = function (id) {
   try {
     state.selQs = new Set(JSON.parse(r.questions || '[]').map(Number));
   } catch (e) {
-    state.selQs = new Set(Qs.map(q => q.n));
+    state.selQs = new Set(getQs().map(q => q.n));
   }
   document.getElementById('round-qs-label').textContent = r.label;
   document.getElementById('link-round-label').textContent = r.label;
@@ -128,12 +128,12 @@ window.addRound = async function () {
     const newR = state.rounds.find(r => r.team_id === state.activeTeamId && r.label === label);
     if (newR) window.selectRound(newR.id);
   } catch (e) {
-    alert('Could not add round.');
+    alert(t('alert.add_round'));
   }
 };
 
 window.rmRound = async function (id, label) {
-  if (!confirm(`Remove round "${label}" and all its responses?`)) return;
+  if (!confirm(t('confirm.remove_round', { name: label }))) return;
   try {
     await delRoundDB(id);
     if (state.activeRoundId === id) {
@@ -144,7 +144,7 @@ window.rmRound = async function (id, label) {
     await loadAll();
     renderRounds();
   } catch (e) {
-    alert('Could not remove round.');
+    alert(t('alert.remove_round'));
   }
 };
 
@@ -152,18 +152,18 @@ window.saveRoundQs = async function () {
   if (!state.activeRoundId) return;
   const btn = document.getElementById('save-qs-btn');
   btn.disabled = true;
-  btn.textContent = 'Saving...';
+  btn.textContent = t('admin.saving');
   try {
     await updateRoundQs(state.activeRoundId, state.selQs);
     const r = state.rounds.find(r => r.id === state.activeRoundId);
     if (r) r.questions = JSON.stringify([...state.selQs]);
     renderRounds();
-    btn.textContent = 'Saved!';
-    setTimeout(() => { btn.disabled = false; btn.textContent = 'Save questions'; }, 1500);
+    btn.textContent = t('admin.saved');
+    setTimeout(() => { btn.disabled = false; btn.textContent = t('admin.save_qs'); }, 1500);
   } catch (e) {
     btn.disabled = false;
-    btn.textContent = 'Save questions';
-    alert('Could not save: ' + e.message);
+    btn.textContent = t('admin.save_qs');
+    alert(t('alert.save_qs') + e.message);
   }
 };
 
@@ -175,19 +175,19 @@ function renderShareUrl() {
 
 window.copyShare = function (btn) {
   navigator.clipboard.writeText(document.getElementById('share-url').textContent);
-  btn.textContent = 'Copied!';
-  setTimeout(() => btn.textContent = 'Copy', 2000);
+  btn.textContent = t('admin.copied');
+  setTimeout(() => btn.textContent = t('admin.copy'), 2000);
 };
 
 function loadQList() {
-  const qs = state.catF === 'all' ? Qs : Qs.filter(q => q.cat === state.catF);
+  const qs = state.catF === 'all' ? getQs() : getQs().filter(q => q.cat === state.catF);
   document.getElementById('q-list').innerHTML = qs.map(q => `
     <div class="q-item ${state.selQs.has(q.n) ? 'selected' : ''}" onclick="togQ(${q.n})">
       <div class="q-check">${state.selQs.has(q.n) ? '<svg style="width:8px;height:8px" viewBox="0 0 8 8"><polyline points="1,4 3.5,6.5 7,2" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}</div>
       <span class="q-num">${q.n}</span>
       <span class="q-text">${escapeHtml(q.text)}</span>
     </div>`).join('');
-  document.getElementById('sel-count').textContent = state.selQs.size + ' selected';
+  document.getElementById('sel-count').textContent = t('admin.selected', { n: state.selQs.size });
 }
 
 window.togQ = function (n) {
@@ -196,7 +196,7 @@ window.togQ = function (n) {
 };
 
 window.selectAll = function () {
-  state.selQs = new Set(Qs.map(q => q.n));
+  state.selQs = new Set(getQs().map(q => q.n));
   loadQList();
 };
 

@@ -1,6 +1,6 @@
 import { saveResp, getRoundById } from './api.js';
-import { Qs, CAT } from './config.js';
 import { state } from './state.js';
+import { t, getQs } from './i18n.js';
 
 function escapeHtml(s) {
   return String(s)
@@ -15,7 +15,7 @@ export function renderSurvey() {
   const el = document.getElementById('survey-body');
   if (!state.sv.round) { renderSvSelectRound(el); return; }
   if (state.sv.step === -1) { renderSvName(el); return; }
-  const activeQs = Qs.filter(q => state.sv.round.questions.includes(q.n));
+  const activeQs = getQs().filter(q => state.sv.round.questions.includes(q.n));
   if (state.sv.step >= activeQs.length) { renderSvDone(el); return; }
   renderSvQ(el, activeQs);
 }
@@ -51,28 +51,28 @@ export async function loadRoundFromUrl() {
 function renderSvSelectRound(el) {
   el.innerHTML = `<div class="empty-state card">
     <div class="empty-icon">&#128279;</div>
-    <div class="font-bold" style="margin-bottom:8px;color:var(--ink)">No survey link detected</div>
-    <div class="text-sm">To fill out a survey, please use the personal link provided by your team admin.</div>
+    <div class="font-bold" style="margin-bottom:8px;color:var(--ink)">${t('survey.no_link')}</div>
+    <div class="text-sm">${t('survey.no_link_sub')}</div>
   </div>`;
 }
 
 function renderSvName(el) {
   el.innerHTML = `<div class="survey-q-card">
     <div style="font-size:12px;color:var(--ink3);font-weight:600;margin-bottom:1rem">${escapeHtml(state.sv.round.teamName)} &nbsp;&middot;&nbsp; ${escapeHtml(state.sv.round.label)}</div>
-    <div style="font-family:var(--font-display);font-size:20px;margin-bottom:1.5rem">Before you begin, please introduce yourself</div>
+    <div style="font-family:var(--font-display);font-size:20px;margin-bottom:1.5rem">${t('survey.intro')}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem">
       <div>
-        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.04em;color:var(--ink3)">First name</label>
-        <input type="text" id="sv-first" placeholder="First name" value="${state.sv.firstName}">
+        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.04em;color:var(--ink3)">${t('survey.firstname')}</label>
+        <input type="text" id="sv-first" placeholder="${t('survey.firstname')}" value="${state.sv.firstName}">
       </div>
       <div>
-        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.04em;color:var(--ink3)">Last name</label>
-        <input type="text" id="sv-last" placeholder="Last name" value="${state.sv.lastName}">
+        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.04em;color:var(--ink3)">${t('survey.lastname')}</label>
+        <input type="text" id="sv-last" placeholder="${t('survey.lastname')}" value="${state.sv.lastName}">
       </div>
     </div>
-    <div class="text-sm" style="margin-bottom:1.5rem">This assessment has <strong>${state.sv.round.questions.length} questions</strong>. Your answers will be visible to your team admin.</div>
+    <div class="text-sm" style="margin-bottom:1.5rem">${t('survey.count', { n: state.sv.round.questions.length })}</div>
     <div class="row" style="justify-content:flex-end">
-      <button class="btn btn-primary" onclick="beginQuestions()">Start survey</button>
+      <button class="btn btn-primary" onclick="beginQuestions()">${t('survey.start')}</button>
     </div>
   </div>`;
   setTimeout(() => { const f = document.getElementById('sv-first'); if (f) f.focus(); }, 100);
@@ -87,22 +87,22 @@ function renderSvQ(el, activeQs) {
   el.innerHTML = `
   <div class="survey-progress">
     <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
-    <div class="progress-label">${state.sv.step} of ${activeQs.length} answered &nbsp;&middot;&nbsp; ${escapeHtml(state.sv.round.teamName)} &nbsp;&middot;&nbsp; ${escapeHtml(state.sv.round.label)}</div>
+    <div class="progress-label">${t('survey.answered', { i: state.sv.step, n: activeQs.length })} &nbsp;&middot;&nbsp; ${escapeHtml(state.sv.round.teamName)} &nbsp;&middot;&nbsp; ${escapeHtml(state.sv.round.label)}</div>
   </div>
   <div class="survey-q-card">
-    <div class="q-cat-row"><span style="font-size:12px;color:var(--ink3);font-weight:600">Question ${state.sv.step + 1} of ${activeQs.length}</span></div>
+    <div class="q-cat-row"><span style="font-size:12px;color:var(--ink3);font-weight:600">${t('survey.question_of', { i: state.sv.step + 1, n: activeQs.length })}</span></div>
     <div class="q-body">${q.text}</div>
     <div class="scale-row">${[1, 2, 3, 4, 5].map(v => `<button class="scale-btn ${score === v ? 'selected' : ''}" onclick="setScore(${q.n},${v})">${v}</button>`).join('')}</div>
-    <div class="scale-labels"><span class="scale-label">Never</span><span class="scale-label">Rarely</span><span class="scale-label">Occasionally</span><span class="scale-label">Most of the time</span><span class="scale-label">Always</span></div>
+    <div class="scale-labels"><span class="scale-label">${t('survey.never')}</span><span class="scale-label">${t('survey.rarely')}</span><span class="scale-label">${t('survey.occasionally')}</span><span class="scale-label">${t('survey.mostofthetime')}</span><span class="scale-label">${t('survey.always')}</span></div>
     <div class="q-comment">
-      <label>Comment (optional)</label>
-      <textarea id="q-comment-${q.n}" placeholder="Any context, anecdote or clarification for this question...">${comment}</textarea>
+      <label>${t('survey.comment_label')}</label>
+      <textarea id="q-comment-${q.n}" placeholder="${t('survey.comment_placeholder')}">${comment}</textarea>
     </div>
   </div>
   <div class="survey-nav">
-    <button class="btn btn-outline btn-sm" onclick="svBack()">Back</button>
+    <button class="btn btn-outline btn-sm" onclick="svBack()">${t('survey.back')}</button>
     <button class="btn btn-primary btn-sm" id="nxt" onclick="svNext(${activeQs.length})" ${score === undefined ? 'disabled' : ''}>
-      ${state.sv.step === activeQs.length - 1 ? 'Submit' : 'Next'}
+      ${state.sv.step === activeQs.length - 1 ? t('survey.submit') : t('survey.next')}
     </button>
   </div>`;
 }
@@ -110,15 +110,15 @@ function renderSvQ(el, activeQs) {
 function renderSvDone(el) {
   el.innerHTML = `<div class="survey-q-card" style="text-align:center;padding:3.5rem 2rem">
     <div style="font-size:52px;margin-bottom:1.25rem">&#128591;</div>
-    <div style="font-family:var(--font-display);font-size:30px;margin-bottom:12px;letter-spacing:-0.02em">Thank you!</div>
+    <div style="font-family:var(--font-display);font-size:30px;margin-bottom:12px;letter-spacing:-0.02em">${t('survey.done_title')}</div>
     <div style="color:var(--ink2);font-size:15px;line-height:1.7;max-width:420px;margin:0 auto">
-      Thank you for filling out this questionnaire &mdash; your input is of utmost importance to us.
+      ${t('survey.done_sub')}
     </div>
   </div>`;
 }
 
 function saveCurrentComment() {
-  const activeQs = Qs.filter(q => state.sv.round.questions.includes(q.n));
+  const activeQs = getQs().filter(q => state.sv.round.questions.includes(q.n));
   if (state.sv.step < 0 || state.sv.step >= activeQs.length) return;
   const q = activeQs[state.sv.step];
   const commentEl = document.getElementById('q-comment-' + q.n);
@@ -144,7 +144,6 @@ window.setScore = function (qn, val) {
   state.sv.answers[qn].score = val;
   const commentEl = document.getElementById('q-comment-' + qn);
   if (commentEl) state.sv.answers[qn].comment = commentEl.value;
-  // Update selection in place to avoid re-rendering the whole card on each click
   document.querySelectorAll('.scale-row .scale-btn').forEach((btn, idx) => {
     btn.classList.toggle('selected', idx + 1 === val);
   });
@@ -160,19 +159,19 @@ window.svBack = function () {
 
 window.svNext = async function (total) {
   saveCurrentComment();
-  const activeQs = Qs.filter(q => state.sv.round.questions.includes(q.n));
+  const activeQs = getQs().filter(q => state.sv.round.questions.includes(q.n));
   if (state.sv.step < activeQs.length - 1) { state.sv.step++; renderSurvey(); return; }
 
   const btn = document.getElementById('nxt');
   btn.disabled = true;
-  btn.innerHTML = 'Saving... <span class="spinner"></span>';
+  btn.innerHTML = `${t('survey.saving')} <span class="spinner"></span>`;
   try {
     await saveResp(state.sv.round.id, state.sv.firstName, state.sv.lastName, state.sv.answers);
     renderSvDone(document.getElementById('survey-body'));
     state.sv = { round: null, firstName: '', lastName: '', answers: {}, step: 0 };
   } catch (e) {
     btn.disabled = false;
-    btn.textContent = 'Submit';
-    alert('Save failed, please retry.');
+    btn.textContent = t('survey.submit');
+    alert(t('survey.save_error'));
   }
 };

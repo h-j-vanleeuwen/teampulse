@@ -2,6 +2,7 @@ import { getResponses } from './api.js';
 import { Qs, CAT, COL } from './config.js';
 import { state } from './state.js';
 import { buildPyramidData } from './pyramid.js';
+import { t, getCat } from './i18n.js';
 
 // Snapshot of the currently rendered round, so the pyramid modal can rebuild
 // itself from the exact scores on screen without re-walking the state tree.
@@ -34,13 +35,13 @@ function calcScores(responses) {
 function ext(sc, dir) {
   let best = dir === 'max' ? -1 : 6;
   let name = '-';
+  const cat = getCat();
   Object.entries(sc).forEach(([c, v]) => {
-    if (v !== null && (dir === 'max' ? v > best : v < best)) { best = v; name = CAT[c]; }
+    if (v !== null && (dir === 'max' ? v > best : v < best)) { best = v; name = cat[c]; }
   });
   return name;
 }
 
-// Calculates standard deviation per category across all respondents.
 function calcDispersion(responses) {
   const out = {};
   Object.keys(CAT).forEach(cat => {
@@ -58,7 +59,6 @@ function calcDispersion(responses) {
   return out;
 }
 
-// Computes average score per question across all respondents.
 function calcQuestionStats(responses) {
   const stats = {};
   Qs.forEach(q => {
@@ -73,15 +73,13 @@ function calcQuestionStats(responses) {
   return stats;
 }
 
-// Returns a dispersion badge HTML string based on standard deviation.
 function dispBadge(d) {
   if (d === null) return '';
-  if (d < 0.7) return '<span class="disp-badge disp-ok">Consensuel</span>';
-  if (d < 1.2) return '<span class="disp-badge disp-mid">Partagé</span>';
-  return '<span class="disp-badge disp-bad">Divergent</span>';
+  if (d < 0.7) return `<span class="disp-badge disp-ok">${t('disp.consensual')}</span>`;
+  if (d < 1.2) return `<span class="disp-badge disp-mid">${t('disp.shared')}</span>`;
+  return `<span class="disp-badge disp-bad">${t('disp.divergent')}</span>`;
 }
 
-// Maps participant full names to anonymous aliases (Participant A, B, C...).
 function buildAliasMap(responses) {
   const names = [...new Set(responses.map(r => `${r.first_name} ${r.last_name}`))].sort();
   return Object.fromEntries(names.map((n, i) => [n, `Participant ${String.fromCharCode(65 + i)}`]));
@@ -89,32 +87,33 @@ function buildAliasMap(responses) {
 
 function buildSynthesisBlock(sc, dispersion) {
   const catKeys = Object.keys(CAT);
+  const cat = getCat();
   const forces = catKeys.filter(c => sc[c] !== null && sc[c] >= 3.5).sort((a, b) => sc[b] - sc[a]);
   const fragilites = catKeys.filter(c => sc[c] !== null && sc[c] < 3.0).sort((a, b) => sc[a] - sc[b]);
   const divergences = catKeys.filter(c => dispersion[c] !== null && dispersion[c] > 1.2);
 
   const renderItems = (items, icon, cls) => items.length
-    ? items.slice(0, 2).map(c => `<div class="synth-item ${cls}"><span class="synth-icon">${icon}</span>${escapeHtml(CAT[c])}<span class="synth-score">${sc[c].toFixed(1)}</span></div>`).join('')
+    ? items.slice(0, 2).map(c => `<div class="synth-item ${cls}"><span class="synth-icon">${icon}</span>${escapeHtml(cat[c])}<span class="synth-score">${sc[c].toFixed(1)}</span></div>`).join('')
     : `<div class="synth-empty">-</div>`;
 
   const renderDivItems = items => items.length
-    ? items.slice(0, 2).map(c => `<div class="synth-item synth-div"><span class="synth-icon">↔</span>${escapeHtml(CAT[c])}</div>`).join('')
-    : `<div class="synth-empty">Opinions alignées</div>`;
+    ? items.slice(0, 2).map(c => `<div class="synth-item synth-div"><span class="synth-icon">↔</span>${escapeHtml(cat[c])}</div>`).join('')
+    : `<div class="synth-empty">${t('results.aligned')}</div>`;
 
   return `
   <div class="card mt synth-card">
-    <div class="card-title">Synthèse</div>
+    <div class="card-title">${t('results.synthesis')}</div>
     <div class="synth-grid">
       <div class="synth-col">
-        <div class="synth-col-title synth-forces-title">Forces</div>
+        <div class="synth-col-title synth-forces-title">${t('results.forces')}</div>
         ${renderItems(forces, '✓', 'synth-force')}
       </div>
       <div class="synth-col">
-        <div class="synth-col-title synth-fragilites-title">Fragilités</div>
+        <div class="synth-col-title synth-fragilites-title">${t('results.fragilites')}</div>
         ${renderItems(fragilites, '!', 'synth-fragile')}
       </div>
       <div class="synth-col">
-        <div class="synth-col-title synth-divergences-title">Divergences</div>
+        <div class="synth-col-title synth-divergences-title">${t('results.divergences')}</div>
         ${renderDivItems(divergences)}
       </div>
     </div>
@@ -122,8 +121,9 @@ function buildSynthesisBlock(sc, dispersion) {
 }
 
 function buildTopBottomSection(qStats) {
-  const cols = Object.keys(CAT).map(cat => {
-    const catList = Object.values(qStats).filter(s => s.q.cat === cat);
+  const cat = getCat();
+  const cols = Object.keys(CAT).map(catKey => {
+    const catList = Object.values(qStats).filter(s => s.q.cat === catKey);
     if (catList.length < 2) return '';
 
     const sorted = [...catList].sort((a, b) => b.avg - a.avg);
@@ -141,7 +141,7 @@ function buildTopBottomSection(qStats) {
     };
 
     return `<div class="topbot-cat">
-      <div class="topbot-cat-title">${escapeHtml(CAT[cat])}</div>
+      <div class="topbot-cat-title">${escapeHtml(cat[catKey])}</div>
       ${top.map(s => renderRow(s, 'top')).join('')}
       <div class="topbot-sep"></div>
       ${bottom.map(s => renderRow(s, 'bottom')).join('')}
@@ -152,7 +152,7 @@ function buildTopBottomSection(qStats) {
 
   return `
   <div class="card mt">
-    <div class="card-title">Questions saillantes par dimension</div>
+    <div class="card-title">${t('results.top_questions')}</div>
     <div class="topbot-grid">${cols}</div>
   </div>`;
 }
@@ -172,7 +172,6 @@ function pyramidBandFractions(topIndex, total) {
   return { top, bottom };
 }
 
-// Builds the clip-path that carves one band, given its width fractions.
 function pyramidClipPath(top, bottom) {
   const halfTop = 50 * top;
   const halfBot = 50 * bottom;
@@ -185,14 +184,13 @@ function pyramidClipPath(top, bottom) {
 function buildPyramidContent(scores) {
   const { levels, priorityKey } = buildPyramidData(scores);
   const total = levels.length;
-  // Render apex first (top of the stack) down to the foundation.
   const rows = [...levels].reverse().map((stage, topIndex) => {
     const { top, bottom } = pyramidBandFractions(topIndex, total);
     const clip = pyramidClipPath(top, bottom);
     const rowHeight = Math.round((bottom - top) * PYRAMID_HEIGHT_PX);
     const scoreText = stage.score !== null ? stage.score.toFixed(1) : '-';
     const priorityChip = stage.isPriority
-      ? '<span class="pyramid-flag">Priorité</span>'
+      ? `<span class="pyramid-flag">${t('pyramid.priority')}</span>`
       : '';
     return `<div class="pyramid-row pyr-l${stage.level} status-${stage.status} ${stage.isPriority ? 'is-priority' : ''}" style="clip-path:${clip};height:${rowHeight}px">
       <div class="pyramid-inner">
@@ -208,16 +206,16 @@ function buildPyramidContent(scores) {
 
   const priorityStage = levels.find(s => s.key === priorityKey);
   const caption = priorityStage
-    ? `Levier prioritaire : <strong>${priorityStage.labelFull}</strong> - l'étage fragile le plus bas. On consolide de la base vers le sommet.`
-    : 'Tous les étages sont sains. La base de l\'équipe est solide.';
+    ? t('pyramid.priority_caption', { label: priorityStage.labelFull })
+    : t('pyramid.all_healthy');
 
   return `
     <div class="pyramid">${rows}</div>
     <div class="pyramid-caption">${caption}</div>
     <div class="pyramid-legend">
-      <span class="legend-item"><span class="legend-dot status-healthy"></span>Sain (&ge;3.5)</span>
-      <span class="legend-item"><span class="legend-dot status-fragile"></span>Fragile (2.5-3.5)</span>
-      <span class="legend-item"><span class="legend-dot status-critical"></span>Critique (&lt;2.5)</span>
+      <span class="legend-item"><span class="legend-dot status-healthy"></span>${t('pyramid.healthy')}</span>
+      <span class="legend-item"><span class="legend-dot status-fragile"></span>${t('pyramid.fragile')}</span>
+      <span class="legend-item"><span class="legend-dot status-critical"></span>${t('pyramid.critical')}</span>
     </div>`;
 }
 
@@ -240,13 +238,13 @@ window.showPyramid = function () {
     <div class="info-modal pyramid-modal">
       <button class="info-close" onclick="closePyramid()" aria-label="Close">&times;</button>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.25rem">
-        <div class="info-section-title" style="margin:0">Pyramide de Lencioni</div>
-        <button class="btn btn-outline btn-sm" onclick="exportPyramidPDF()" style="font-size:12px">Export PDF</button>
+        <div class="info-section-title" style="margin:0">${t('pyramid.title')}</div>
+        <button class="btn btn-outline btn-sm" onclick="exportPyramidPDF()" style="font-size:12px">${t('results.export_pdf')}</button>
       </div>
       <div class="info-meta" style="margin-bottom:1rem">
-        <div><span class="info-meta-label">Équipe</span>${escapeHtml(teamName)}</div>
-        <div><span class="info-meta-label">Round</span>${escapeHtml(roundLabel)}</div>
-        <div><span class="info-meta-label">Réponses</span>${responseCount}</div>
+        <div><span class="info-meta-label">${t('pyramid.team')}</span>${escapeHtml(teamName)}</div>
+        <div><span class="info-meta-label">${t('pyramid.round')}</span>${escapeHtml(roundLabel)}</div>
+        <div><span class="info-meta-label">${t('pyramid.responses')}</span>${responseCount}</div>
       </div>
       ${buildPyramidContent(scores)}
     </div>`;
@@ -260,20 +258,19 @@ window.closePyramid = function () {
 
 export async function fetchResults() {
   document.getElementById('results-body').innerHTML =
-    '<div class="empty-state"><div style="font-size:24px">&#9203;</div><div>Loading...</div></div>';
+    `<div class="empty-state"><div style="font-size:24px">&#9203;</div><div>${t('results.loading')}</div></div>`;
   try {
     state.allResponses = await getResponses();
     renderResults();
   } catch (e) {
     document.getElementById('results-body').innerHTML =
-      '<div class="alert alert-error">Could not load: ' + e.message + '</div>';
+      `<div class="alert alert-error">${t('results.could_not_load')}${e.message}</div>`;
   }
 }
 
 function buildLongitudinalSection(ct, roundList) {
   const participantMap = {};
 
-  // Build alias map from all participants across all rounds of this team.
   const allNames = [];
   roundList.forEach(round => round.responses.forEach(r => allNames.push(`${r.first_name} ${r.last_name}`)));
   const aliasMap = Object.fromEntries(
@@ -327,10 +324,10 @@ function buildLongitudinalSection(ct, roundList) {
 
   return `
   <div class="card mt">
-    <div class="card-title">Evolution by participant</div>
+    <div class="card-title">${t('results.evolution')}</div>
     <div style="overflow-x:auto">
       <table class="responses-table longi-table">
-        <thead><tr><th>Participant</th>${headers}<th>Trend</th></tr></thead>
+        <thead><tr><th>${t('results.participant')}</th>${headers}<th>${t('results.trend')}</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>
@@ -339,6 +336,7 @@ function buildLongitudinalSection(ct, roundList) {
 
 function renderResults() {
   const el = document.getElementById('results-body');
+  const cat = getCat();
 
   const teamMap = {};
   state.allResponses.forEach(r => {
@@ -353,7 +351,7 @@ function renderResults() {
 
   const teamList = Object.values(teamMap);
   if (!teamList.length) {
-    el.innerHTML = '<div class="empty-state card"><div class="empty-icon">&#128202;</div><div class="font-bold" style="margin-bottom:8px">No responses yet</div><div class="text-sm">Complete a survey round to see results here.</div></div>';
+    el.innerHTML = `<div class="empty-state card"><div class="empty-icon">&#128202;</div><div class="font-bold" style="margin-bottom:8px">${t('results.no_data')}</div><div class="text-sm">${t('results.no_data_sub')}</div></div>`;
     return;
   }
 
@@ -390,32 +388,32 @@ function renderResults() {
     <div class="print-header-brand">
       <div class="print-header-mark"></div>
       <div class="print-header-name">Team<span>Pulse</span></div>
-      <div class="print-header-title">Team Health Assessment</div>
+      <div class="print-header-title">${t('results.health_assessment')}</div>
     </div>
     <div class="print-header-meta">
-      <span>Team: <strong>${escapeHtml(ct.name)}</strong></span>
-      <span>Round: <strong>${rRound ? escapeHtml(rRound.label) : '-'}</strong>${compareMeta}</span>
-      <span>Responses: <strong>${rResp.length}</strong></span>
-      <span>Generated: <strong>${printDate}</strong></span>
+      <span>${t('results.team')}: <strong>${escapeHtml(ct.name)}</strong></span>
+      <span>${t('results.round')}: <strong>${rRound ? escapeHtml(rRound.label) : '-'}</strong>${compareMeta}</span>
+      <span>${t('results.responses')}: <strong>${rResp.length}</strong></span>
+      <span>${t('results.generated')}: <strong>${printDate}</strong></span>
     </div>
   </div>
 
   <div class="card no-print">
-    <div class="card-title">Team</div>
+    <div class="card-title">${t('results.team')}</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      ${teamList.map(t => `<button class="team-pill ${t.id === state.rTeamId ? 'active' : ''}" onclick="selectResultTeam('${t.id}')">${escapeHtml(t.name)}</button>`).join('')}
+      ${teamList.map(t_ => `<button class="team-pill ${t_.id === state.rTeamId ? 'active' : ''}" onclick="selectResultTeam('${t_.id}')">${escapeHtml(t_.name)}</button>`).join('')}
     </div>
   </div>
 
   <div class="card mt no-print">
-    <div class="card-title">Round</div>
+    <div class="card-title">${t('results.round')}</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap${roundList.length > 1 ? ';margin-bottom:1rem' : ''}">
       ${roundList.map(r => `<button class="team-pill ${r.id === state.rRoundId ? 'active' : ''}" onclick="selectResultRound('${r.id}')">${escapeHtml(r.label)} <span style="opacity:0.6;font-size:11px">${r.responses.length}</span></button>`).join('')}
     </div>
     ${roundList.length > 1 ? `
-    <div style="font-size:12px;color:var(--ink3);margin-bottom:6px">Compare with:</div>
+    <div style="font-size:12px;color:var(--ink3);margin-bottom:6px">${t('results.compare')}</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="team-pill ${!state.cRoundId ? 'active' : ''}" onclick="selectCompareRound(null)" style="font-size:12px">None</button>
+      <button class="team-pill ${!state.cRoundId ? 'active' : ''}" onclick="selectCompareRound(null)" style="font-size:12px">${t('results.compare_none')}</button>
       ${roundList.filter(r => r.id !== state.rRoundId).map(r => `<button class="team-pill ${r.id === state.cRoundId ? 'compare' : ''}" onclick="selectCompareRound('${r.id}')" style="font-size:12px">${escapeHtml(r.label)}</button>`).join('')}
     </div>` : ''}
   </div>
@@ -423,29 +421,29 @@ function renderResults() {
   ${buildSynthesisBlock(sc, dispersion)}
 
   <div class="stats-grid mt">
-    <div class="stat-card"><div class="stat-label">Responses</div><div class="stat-value">${rResp.length}</div></div>
-    <div class="stat-card"><div class="stat-label">Overall avg</div><div class="stat-value">${ov.toFixed(1)}<span class="stat-max">/5</span></div></div>
-    <div class="stat-card"><div class="stat-label">Strongest</div><div class="stat-value" style="font-size:18px;padding-top:8px">${ext(sc, 'max')}</div></div>
-    <div class="stat-card"><div class="stat-label">Focus area</div><div class="stat-value" style="font-size:18px;padding-top:8px">${ext(sc, 'min')}</div></div>
+    <div class="stat-card"><div class="stat-label">${t('results.responses')}</div><div class="stat-value">${rResp.length}</div></div>
+    <div class="stat-card"><div class="stat-label">${t('results.overall')}</div><div class="stat-value">${ov.toFixed(1)}<span class="stat-max">/5</span></div></div>
+    <div class="stat-card"><div class="stat-label">${t('results.strongest')}</div><div class="stat-value" style="font-size:18px;padding-top:8px">${ext(sc, 'max')}</div></div>
+    <div class="stat-card"><div class="stat-label">${t('results.focus')}</div><div class="stat-value" style="font-size:18px;padding-top:8px">${ext(sc, 'min')}</div></div>
   </div>
 
   <div class="card mt">
-    <div class="card-title">Scores by dimension</div>
+    <div class="card-title">${t('results.scores')}</div>
     ${cSc ? `<div style="display:flex;gap:16px;margin-bottom:1rem">
       <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>${escapeHtml(rRound.label)}</div>
       <div class="legend-item"><div class="legend-dot" style="background:var(--amber);opacity:0.55"></div>${escapeHtml(cRound.label)}</div>
     </div>` : ''}
     <div class="bar-chart">
-      ${Object.entries(CAT).map(([cat, label]) => {
-        const s = sc[cat];
-        const cs = cSc ? cSc[cat] : null;
+      ${Object.entries(cat).map(([catKey, label]) => {
+        const s = sc[catKey];
+        const cs = cSc ? cSc[catKey] : null;
         const p = s !== null ? (s / 5 * 100).toFixed(1) : 0;
         const cp = cs !== null ? (cs / 5 * 100).toFixed(1) : 0;
         return `<div class="bar-row">
-          <div class="bar-label">${label}${dispBadge(dispersion[cat])}</div>
+          <div class="bar-label">${label}${dispBadge(dispersion[catKey])}</div>
           <div class="bar-track">
-            ${cs !== null ? `<div class="bar-fill2" style="width:${cp}%;background:${COL[cat]}"></div>` : ''}
-            <div class="bar-fill" style="width:${p}%;background:${COL[cat]}"><span>${s !== null ? s.toFixed(2) : '-'}</span></div>
+            ${cs !== null ? `<div class="bar-fill2" style="width:${cp}%;background:${COL[catKey]}"></div>` : ''}
+            <div class="bar-fill" style="width:${p}%;background:${COL[catKey]}"><span>${s !== null ? s.toFixed(2) : '-'}</span></div>
           </div>
           <div class="bar-score">${s !== null ? s.toFixed(1) : '-'}</div>
         </div>`;
@@ -457,16 +455,16 @@ function renderResults() {
 
   <div class="card mt">
     <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
-      Individual responses
+      ${t('results.individual')}
       <div class="no-print" style="display:flex;gap:6px">
-        <button class="btn btn-outline btn-sm" onclick="showPyramid()">Pyramide</button>
-        <button class="btn btn-outline btn-sm" onclick="exportCSV()">Export CSV</button>
-        <button class="btn btn-outline btn-sm" onclick="fetchResults()">Refresh</button>
+        <button class="btn btn-outline btn-sm" onclick="showPyramid()">${t('results.pyramid')}</button>
+        <button class="btn btn-outline btn-sm" onclick="exportCSV()">${t('results.export_csv')}</button>
+        <button class="btn btn-outline btn-sm" onclick="fetchResults()">${t('results.refresh')}</button>
       </div>
     </div>
     <div style="overflow-x:auto">
       <table class="responses-table">
-        <thead><tr><th>#</th><th>Participant</th><th>Date</th>${Object.values(CAT).map(l => `<th>${l}</th>`).join('')}<th>Avg</th><th>Notes</th></tr></thead>
+        <thead><tr><th>#</th><th>${t('results.participant')}</th><th>${t('results.date')}</th>${Object.values(cat).map(l => `<th>${l}</th>`).join('')}<th>${t('results.avg')}</th><th>${t('results.notes')}</th></tr></thead>
         <tbody>
           ${rResp.map((r, i) => {
             const rs = calcScores([r]);
@@ -482,13 +480,13 @@ function renderResults() {
               <td style="color:var(--ink3)">${i + 1}</td>
               <td style="font-weight:500">${escapeHtml(alias)} <button class="info-btn no-print" onclick="showResponseInfo('${r.id}')" title="Response details">&#9432;</button></td>
               <td style="color:var(--ink3)">${new Date(r.submitted_at).toLocaleDateString()}</td>
-              ${Object.keys(CAT).map(cat => { const v = rs[cat]; return `<td><span class="score-pill ${v !== null ? 'score-' + Math.round(v) : ''}">${v !== null ? v.toFixed(1) : '-'}</span></td>`; }).join('')}
+              ${Object.keys(cat).map(catKey => { const v = rs[catKey]; return `<td><span class="score-pill ${v !== null ? 'score-' + Math.round(v) : ''}">${v !== null ? v.toFixed(1) : '-'}</span></td>`; }).join('')}
               <td><strong>${ov2 !== null ? ov2.toFixed(2) : '-'}</strong></td>
               <td><button class="btn-comments ${comments.length ? 'has-comments' : ''}" onclick="toggleComments('${rowId}')" ${!comments.length ? 'disabled' : ''}>${comments.length ? '&#128172; ' + comments.length : '-'}</button></td>
             </tr>
             <tr class="comments-row" id="${rowId}" style="display:none">
-              <td colspan="${7 + Object.keys(CAT).length}">
-                ${comments.map(c => `<div class="comment-block"><div class="comment-q">Q${c.q.n} &mdash; ${escapeHtml(CAT[c.q.cat] || c.q.cat)}: "${escapeHtml(c.q.text)}"</div><div class="comment-text">${escapeHtml(c.text)}</div></div>`).join('')}
+              <td colspan="${7 + Object.keys(cat).length}">
+                ${comments.map(c => `<div class="comment-block"><div class="comment-q">Q${c.q.n} &mdash; ${escapeHtml(cat[c.q.cat] || c.q.cat)}: "${escapeHtml(c.q.text)}"</div><div class="comment-text">${escapeHtml(c.text)}</div></div>`).join('')}
               </td>
             </tr>`;
           }).join('')}
@@ -544,8 +542,9 @@ window.exportCSV = function () {
   const rRound = ct.rounds[state.rRoundId];
   if (!rRound) return;
 
-  const catKeys = Object.keys(CAT);
-  const headers = ['Participant', 'Date', ...Object.values(CAT), 'Avg'];
+  const cat = getCat();
+  const catKeys = Object.keys(cat);
+  const headers = [t('results.participant'), t('results.date'), ...Object.values(cat), t('results.avg')];
   const aliasMap = buildAliasMap(rRound.responses);
 
   const rows = rRound.responses.map((r, i) => {
@@ -556,7 +555,7 @@ window.exportCSV = function () {
     return [
       `"${alias}"`,
       new Date(r.submitted_at).toLocaleDateString(),
-      ...catKeys.map(cat => rs[cat] !== null ? rs[cat].toFixed(2) : ''),
+      ...catKeys.map(catKey => rs[catKey] !== null ? rs[catKey].toFixed(2) : ''),
       avg !== null ? avg.toFixed(2) : '',
     ];
   });
@@ -575,6 +574,7 @@ window.showResponseInfo = function (id) {
   const r = state.allResponses.find(x => x.id === id);
   if (!r) return;
 
+  const cat = getCat();
   const scores = calcScores([r]);
   const validScores = Object.values(scores).filter(v => v !== null);
   const overall = validScores.length ? (validScores.reduce((a, b) => a + b, 0) / validScores.length) : null;
@@ -587,17 +587,17 @@ window.showResponseInfo = function (id) {
     .map(([qn, a]) => ({ q: Qs.find(q => q.n === Number(qn)), text: a.comment.trim() }))
     .filter(c => c.q);
 
-  const scoreRows = Object.keys(CAT).map(cat => {
-    const v = scores[cat];
+  const scoreRows = Object.keys(cat).map(catKey => {
+    const v = scores[catKey];
     return `<div class="info-score-row">
-        <span class="info-score-label">${escapeHtml(CAT[cat])}</span>
+        <span class="info-score-label">${escapeHtml(cat[catKey])}</span>
         <span class="score-pill ${v !== null ? 'score-' + Math.round(v) : ''}">${v !== null ? v.toFixed(1) : '-'}</span>
       </div>`;
   }).join('');
 
   const commentsHtml = comments.length
-    ? comments.map(c => `<div class="comment-block"><div class="comment-q">Q${c.q.n} &mdash; ${escapeHtml(CAT[c.q.cat] || c.q.cat)}: "${escapeHtml(c.q.text)}"</div><div class="comment-text">${escapeHtml(c.text)}</div></div>`).join('')
-    : '<div class="text-sm" style="color:var(--ink3)">No comments for this response.</div>';
+    ? comments.map(c => `<div class="comment-block"><div class="comment-q">Q${c.q.n} &mdash; ${escapeHtml(cat[c.q.cat] || c.q.cat)}: "${escapeHtml(c.q.text)}"</div><div class="comment-text">${escapeHtml(c.text)}</div></div>`).join('')
+    : `<div class="text-sm" style="color:var(--ink3)">${t('results.no_comments')}</div>`;
 
   let overlay = document.getElementById('info-overlay');
   if (!overlay) {
@@ -615,14 +615,14 @@ window.showResponseInfo = function (id) {
       <button class="info-close" onclick="closeResponseInfo()" aria-label="Close">&times;</button>
       <div class="info-name">${escapeHtml(r.first_name)} ${escapeHtml(r.last_name)}</div>
       <div class="info-meta">
-        <div><span class="info-meta-label">Team</span>${escapeHtml(teamName)}</div>
-        <div><span class="info-meta-label">Round</span>${escapeHtml(roundLabel)}</div>
-        <div><span class="info-meta-label">Submitted</span>${escapeHtml(submittedAt)}</div>
-        <div><span class="info-meta-label">Overall</span>${overall !== null ? overall.toFixed(2) : '-'}</div>
+        <div><span class="info-meta-label">${t('pyramid.team')}</span>${escapeHtml(teamName)}</div>
+        <div><span class="info-meta-label">${t('pyramid.round')}</span>${escapeHtml(roundLabel)}</div>
+        <div><span class="info-meta-label">${t('results.submitted')}</span>${escapeHtml(submittedAt)}</div>
+        <div><span class="info-meta-label">${t('results.overall_score')}</span>${overall !== null ? overall.toFixed(2) : '-'}</div>
       </div>
-      <div class="info-section-title">Scores by dimension</div>
+      <div class="info-section-title">${t('results.scores_section')}</div>
       <div class="info-scores">${scoreRows}</div>
-      <div class="info-section-title">Comments</div>
+      <div class="info-section-title">${t('results.comments_section')}</div>
       <div class="info-comments">${commentsHtml}</div>
     </div>`;
   overlay.style.display = 'flex';
@@ -690,6 +690,8 @@ function buildPyramidCanvas(scores) {
     ctx.closePath();
   }
 
+  const priorityChipLabel = t('pyramid.priority').toUpperCase();
+
   let y = 0;
   bandRows.forEach(band => {
     bandPath(band.top, band.bottom, band.h, y);
@@ -702,17 +704,16 @@ function buildPyramidCanvas(scores) {
 
     const tY = y + band.h - 18;
 
-    // Measure widths to lay out the group centered without any overlap
     ctx.font = '700 12px Inter, system-ui, sans-serif';
     const keyLabel = band.labelKey.toUpperCase();
     const keyW = ctx.measureText(keyLabel).width;
+    const chipW = band.isPriority ? (ctx.font = '700 7px Inter, system-ui, sans-serif', ctx.measureText(priorityChipLabel).width + 10, ctx.font = '700 12px Inter, system-ui, sans-serif', CHIP_W) : 0;
     const totalW = NUM_W + EL_GAP + keyW
-      + (band.isPriority ? EL_GAP + CHIP_W : 0)
+      + (band.isPriority ? EL_GAP + chipW : 0)
       + (band.score !== null ? EL_GAP + SCORE_W : 0);
 
     let cx = CX - totalW / 2;
 
-    // Number
     ctx.font = '800 18px Inter, system-ui, sans-serif';
     ctx.fillStyle = 'rgba(255,255,255,0.55)';
     ctx.textAlign = 'left';
@@ -720,7 +721,6 @@ function buildPyramidCanvas(scores) {
     ctx.fillText(String(band.level).padStart(2, '0'), cx, tY);
     cx += NUM_W + EL_GAP;
 
-    // Descriptor (small) stacked above Key (bold), both centered on the key column
     const textCX = cx + keyW / 2;
     ctx.font = '400 8px Inter, system-ui, sans-serif';
     ctx.fillStyle = 'rgba(255,255,255,0.82)';
@@ -731,7 +731,6 @@ function buildPyramidCanvas(scores) {
     ctx.fillText(keyLabel, textCX, tY + 3);
     cx += keyW;
 
-    // PRIORITÉ chip — inside clip, right after the key text
     if (band.isPriority) {
       cx += EL_GAP;
       rrect(cx, tY - CHIP_H / 2 + 3, CHIP_W, CHIP_H, 7);
@@ -741,11 +740,10 @@ function buildPyramidCanvas(scores) {
       ctx.fillStyle = '#1A1A1A';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('PRIORITÉ', cx + CHIP_W / 2, tY + 3);
+      ctx.fillText(priorityChipLabel, cx + CHIP_W / 2, tY + 3);
       cx += CHIP_W;
     }
 
-    // Score badge — always last, never overlaps anything
     if (band.score !== null) {
       cx += EL_GAP;
       rrect(cx, tY - SCORE_H / 2, SCORE_W, SCORE_H, 10);
@@ -762,22 +760,20 @@ function buildPyramidCanvas(scores) {
     y += band.h + GAP;
   });
 
-  // Caption
   const priorityStage = levels.find(s => s.key === priorityKey);
   const caption = priorityStage
-    ? `Levier prioritaire : ${priorityStage.labelFull} — l'étage fragile le plus bas.`
-    : "Tous les étages sont sains. La base de l'équipe est solide.";
+    ? `${t('pyramid.priority')}: ${priorityStage.labelFull}`
+    : t('pyramid.all_healthy');
   ctx.font = '400 12px Inter, system-ui, sans-serif';
   ctx.fillStyle = '#6A655B';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
   ctx.fillText(caption, CX, y + 10);
 
-  // Legend
   const legendItems = [
-    { label: 'Sain (≥3.5)', color: '#15803D' },
-    { label: 'Fragile (2.5-3.5)', color: '#C2620E' },
-    { label: 'Critique (<2.5)', color: '#CB3F1C' },
+    { label: t('pyramid.healthy'), color: '#15803D' },
+    { label: t('pyramid.fragile'), color: '#C2620E' },
+    { label: t('pyramid.critical'), color: '#CB3F1C' },
   ];
   ctx.font = '400 12px Inter, system-ui, sans-serif';
   const iGap = 18;
@@ -804,7 +800,7 @@ window.exportPyramidPDF = function () {
   const { scores, teamName, roundLabel, responseCount } = lastPyramidContext;
 
   const btn = document.querySelector('#pyramid-overlay [onclick="exportPyramidPDF()"]');
-  if (btn) { btn.disabled = true; btn.textContent = 'Génération...'; }
+  if (btn) { btn.disabled = true; btn.textContent = t('results.loading'); }
 
   try {
     const canvas = buildPyramidCanvas(scores);
@@ -817,7 +813,7 @@ window.exportPyramidPDF = function () {
     const doc = iframe.contentWindow.document;
     doc.open();
     doc.write(`<!DOCTYPE html><html><head>
-      <title>Pyramide de Lencioni — ${escapeHtml(teamName)} — ${escapeHtml(roundLabel)}</title>
+      <title>${t('pyramid.title')} — ${escapeHtml(teamName)} — ${escapeHtml(roundLabel)}</title>
       <style>
         *{box-sizing:border-box;margin:0;padding:0;}
         body{background:#fff;padding:2cm;font-family:Inter,system-ui,sans-serif;}
@@ -828,11 +824,11 @@ window.exportPyramidPDF = function () {
         @page{margin:1.5cm;}
       </style>
     </head><body>
-      <h2>Pyramide de Lencioni</h2>
+      <h2>${t('pyramid.title')}</h2>
       <div class="meta">
-        <span>Équipe <strong>${escapeHtml(teamName)}</strong></span>
-        <span>Round <strong>${escapeHtml(roundLabel)}</strong></span>
-        <span>Réponses <strong>${responseCount}</strong></span>
+        <span>${t('pyramid.team')} <strong>${escapeHtml(teamName)}</strong></span>
+        <span>${t('pyramid.round')} <strong>${escapeHtml(roundLabel)}</strong></span>
+        <span>${t('pyramid.responses')} <strong>${responseCount}</strong></span>
       </div>
       <img src="${imgData}">
     </body></html>`);
@@ -844,8 +840,8 @@ window.exportPyramidPDF = function () {
       setTimeout(() => iframe.remove(), 1000);
     });
   } catch (e) {
-    alert('Export échoué : ' + e.message);
+    alert(t('alert.export_failed') + e.message);
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = 'Export PDF'; }
+    if (btn) { btn.disabled = false; btn.textContent = t('results.export_pdf'); }
   }
 };

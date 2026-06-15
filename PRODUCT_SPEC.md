@@ -76,7 +76,7 @@
 | Mode atelier / facilitation (questions de coaching par niveau) | ❌ Manquant | |
 | Comparaison multi-vagues avec indicateurs d'évolution (↑↓) | ⚠️ Partiel | Comparaison rounds side-by-side présente, mais sans delta affiché |
 | Vue simple / vue coach | ❌ Manquant | |
-| **Multilingue (FR / EN / ES)** | ❌ Manquant | Option de changement de langue dans l'UI ; concerne les labels d'interface, les 37 questions et les labels Lencioni |
+| **Multilingue (FR / EN / ES)** | ✅ Fait | Sélecteur FR/EN/ES dans la nav, persisté en localStorage ; 37 questions + labels Lencioni + toute l'interface traduits |
 | **Top questions avec le plus grand delta inter-participants** | ❌ Manquant | Compléter la section "Questions saillantes" avec les questions à plus forte dispersion (stddev par question, pas seulement par catégorie) |
 | **Top questions les plus alignées** | ❌ Manquant | Inverse du delta : questions où tous les participants convergent (stddev la plus faible) |
 | **Export CSV enrichi** | ⚠️ Partiel | Actuellement : scores agrégés par catégorie. À ajouter : score par question individuelle + verbatim associé, pour alimentation d'une IA |

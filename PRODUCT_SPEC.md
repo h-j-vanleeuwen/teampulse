@@ -76,6 +76,11 @@
 | Mode atelier / facilitation (questions de coaching par niveau) | ❌ Manquant | |
 | Comparaison multi-vagues avec indicateurs d'évolution (↑↓) | ⚠️ Partiel | Comparaison rounds side-by-side présente, mais sans delta affiché |
 | Vue simple / vue coach | ❌ Manquant | |
+| **Multilingue (FR / EN / ES)** | ❌ Manquant | Option de changement de langue dans l'UI ; concerne les labels d'interface, les 37 questions et les labels Lencioni |
+| **Top questions avec le plus grand delta inter-participants** | ❌ Manquant | Compléter la section "Questions saillantes" avec les questions à plus forte dispersion (stddev par question, pas seulement par catégorie) |
+| **Top questions les plus alignées** | ❌ Manquant | Inverse du delta : questions où tous les participants convergent (stddev la plus faible) |
+| **Export CSV enrichi** | ⚠️ Partiel | Actuellement : scores agrégés par catégorie. À ajouter : score par question individuelle + verbatim associé, pour alimentation d'une IA |
+| **Vue résultats par question individuelle** | ❌ Manquant | Tableau détaillé par participant : score sur chaque question, filtrables par catégorie ou en vue complète |
 
 ---
 
@@ -109,3 +114,6 @@ Par ordre de priorité pour atteindre le MVP :
 - L'anonymisation est-elle totale (aucun nom visible côté résultats) ou partielle (visible pour l'admin) ?
 - Le "taux de participation" est-il un champ à saisir dans l'admin au moment de la création du round ?
 - Les "questions de coaching" de la V2 sont-elles des contenus statiques par niveau ou dynamiques selon les scores ?
+- Multilingue : la langue est-elle un réglage global de l'app (admin choisit) ou par utilisateur/participant ?
+- Export CSV enrichi : faut-il un seul fichier (scores + verbatims) ou deux fichiers séparés ?
+- Vue par question individuelle : doit-elle être accessible aux participants ou réservée à l'admin ?

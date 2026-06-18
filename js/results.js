@@ -2,11 +2,15 @@ import { getResponses } from './api.js';
 import { Qs, CAT, COL } from './config.js';
 import { state } from './state.js';
 import { buildPyramidData } from './pyramid.js';
-import { t, getCat } from './i18n.js';
+import { t, getCat, getQs } from './i18n.js';
 
 // Snapshot of the currently rendered round, so the pyramid modal can rebuild
 // itself from the exact scores on screen without re-walking the state tree.
 let lastPyramidContext = null;
+
+function qText(q) {
+  return getQs().find(tq => tq.n === q.n)?.text || q.text;
+}
 
 function escapeHtml(s) {
   return String(s)
@@ -111,7 +115,7 @@ function buildAllResponsesBlock(rResp, aliasMap) {
         </div>`;
       }).join('');
       return `<div class="allresp-q-block">
-        <div class="allresp-q-text"><span class="allresp-q-num">${q.n}.</span> ${escapeHtml(q.text)}</div>
+        <div class="allresp-q-text"><span class="allresp-q-num">${q.n}.</span> ${escapeHtml(qText(q))}</div>
         ${pRows}
       </div>`;
     }).join('');
@@ -142,7 +146,7 @@ function buildTopBottomSection(qStats) {
       const cls = type === 'top' ? 'topbot-up' : 'topbot-down';
       return `<div class="topbot-q-row ${cls}">
         <span class="topbot-icon">${icon}</span>
-        <span class="topbot-text">${escapeHtml(s.q.text)}</span>
+        <span class="topbot-text">${escapeHtml(qText(s.q))}</span>
         <span class="topbot-score">${s.avg.toFixed(1)}</span>
       </div>`;
     };
@@ -480,7 +484,7 @@ function renderResults() {
             </tr>
             <tr class="comments-row" id="${rowId}" style="display:none">
               <td colspan="${7 + Object.keys(cat).length}">
-                ${comments.map(c => `<div class="comment-block"><div class="comment-q">Q${c.q.n} &mdash; ${escapeHtml(cat[c.q.cat] || c.q.cat)}: "${escapeHtml(c.q.text)}"</div><div class="comment-text">${escapeHtml(c.text)}</div></div>`).join('')}
+                ${comments.map(c => `<div class="comment-block"><div class="comment-q">Q${c.q.n} &mdash; ${escapeHtml(cat[c.q.cat] || c.q.cat)}: "${escapeHtml(qText(c.q))}"</div><div class="comment-text">${escapeHtml(c.text)}</div></div>`).join('')}
               </td>
             </tr>`;
           }).join('')}
@@ -591,7 +595,7 @@ window.showResponseInfo = function (id) {
   }).join('');
 
   const commentsHtml = comments.length
-    ? comments.map(c => `<div class="comment-block"><div class="comment-q">Q${c.q.n} &mdash; ${escapeHtml(cat[c.q.cat] || c.q.cat)}: "${escapeHtml(c.q.text)}"</div><div class="comment-text">${escapeHtml(c.text)}</div></div>`).join('')
+    ? comments.map(c => `<div class="comment-block"><div class="comment-q">Q${c.q.n} &mdash; ${escapeHtml(cat[c.q.cat] || c.q.cat)}: "${escapeHtml(qText(c.q))}"</div><div class="comment-text">${escapeHtml(c.text)}</div></div>`).join('')
     : `<div class="text-sm" style="color:var(--ink3)">${t('results.no_comments')}</div>`;
 
   let overlay = document.getElementById('info-overlay');

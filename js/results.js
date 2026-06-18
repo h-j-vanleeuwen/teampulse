@@ -85,38 +85,45 @@ function buildAliasMap(responses) {
   return Object.fromEntries(names.map((n, i) => [n, `Participant ${String.fromCharCode(65 + i)}`]));
 }
 
-function buildSynthesisBlock(sc, dispersion) {
-  const catKeys = Object.keys(CAT);
+
+function buildAllResponsesBlock(rResp, aliasMap) {
+  if (!rResp.length) return '';
   const cat = getCat();
-  const forces = catKeys.filter(c => sc[c] !== null && sc[c] >= 3.5).sort((a, b) => sc[b] - sc[a]);
-  const fragilites = catKeys.filter(c => sc[c] !== null && sc[c] < 3.0).sort((a, b) => sc[a] - sc[b]);
-  const divergences = catKeys.filter(c => dispersion[c] !== null && dispersion[c] > 1.2);
+  const answeredNums = new Set();
+  rResp.forEach(r => Object.keys(r.answers || {}).forEach(n => answeredNums.add(Number(n))));
+  const activeQs = Qs.filter(q => answeredNums.has(q.n));
+  if (!activeQs.length) return '';
 
-  const renderItems = (items, icon, cls) => items.length
-    ? items.slice(0, 2).map(c => `<div class="synth-item ${cls}"><span class="synth-icon">${icon}</span>${escapeHtml(cat[c])}<span class="synth-score">${sc[c].toFixed(1)}</span></div>`).join('')
-    : `<div class="synth-empty">-</div>`;
+  const groups = Object.keys(CAT).map(catKey => {
+    const qs = activeQs.filter(q => q.cat === catKey);
+    if (!qs.length) return '';
+    const qBlocks = qs.map(q => {
+      const pRows = rResp.map((r, i) => {
+        const alias = aliasMap[`${r.first_name} ${r.last_name}`] || `Participant ${i + 1}`;
+        const a = r.answers?.[q.n];
+        const score = a && typeof a === 'object' ? a.score : (typeof a === 'number' ? a : null);
+        const comment = a && typeof a === 'object' && a.comment ? a.comment.trim() : '';
+        if (score === null) return '';
+        return `<div class="allresp-p-row">
+          <span class="allresp-p-alias">${alias}</span>
+          <span class="allresp-p-score">${score}<span class="allresp-p-max">/5</span></span>
+          ${comment ? `<span class="allresp-p-comment">${escapeHtml(comment)}</span>` : ''}
+        </div>`;
+      }).join('');
+      return `<div class="allresp-q-block">
+        <div class="allresp-q-text"><span class="allresp-q-num">${q.n}.</span> ${escapeHtml(q.text)}</div>
+        ${pRows}
+      </div>`;
+    }).join('');
+    return `<div class="allresp-group">
+      <div class="allresp-cat-label" style="color:${COL[catKey]}">${escapeHtml(cat[catKey])}</div>
+      ${qBlocks}
+    </div>`;
+  }).filter(Boolean).join('');
 
-  const renderDivItems = items => items.length
-    ? items.slice(0, 2).map(c => `<div class="synth-item synth-div"><span class="synth-icon">↔</span>${escapeHtml(cat[c])}</div>`).join('')
-    : `<div class="synth-empty">${t('results.aligned')}</div>`;
-
-  return `
-  <div class="card mt synth-card">
-    <div class="card-title">${t('results.synthesis')}</div>
-    <div class="synth-grid">
-      <div class="synth-col">
-        <div class="synth-col-title synth-forces-title">${t('results.forces')}</div>
-        ${renderItems(forces, '✓', 'synth-force')}
-      </div>
-      <div class="synth-col">
-        <div class="synth-col-title synth-fragilites-title">${t('results.fragilites')}</div>
-        ${renderItems(fragilites, '!', 'synth-fragile')}
-      </div>
-      <div class="synth-col">
-        <div class="synth-col-title synth-divergences-title">${t('results.divergences')}</div>
-        ${renderDivItems(divergences)}
-      </div>
-    </div>
+  return `<div class="card mt allresp-card no-pdf">
+    <div class="card-title">Réponses par question</div>
+    ${groups}
   </div>`;
 }
 
@@ -151,7 +158,7 @@ function buildTopBottomSection(qStats) {
   if (!cols) return '';
 
   return `
-  <div class="card mt">
+  <div class="card mt questions-card">
     <div class="card-title">${t('results.top_questions')}</div>
     <div class="topbot-grid">${cols}</div>
   </div>`;
@@ -188,35 +195,18 @@ function buildPyramidContent(scores) {
     const { top, bottom } = pyramidBandFractions(topIndex, total);
     const clip = pyramidClipPath(top, bottom);
     const rowHeight = Math.round((bottom - top) * PYRAMID_HEIGHT_PX);
-    const scoreText = stage.score !== null ? stage.score.toFixed(1) : '-';
-    const priorityChip = stage.isPriority
-      ? `<span class="pyramid-flag">${t('pyramid.priority')}</span>`
-      : '';
-    return `<div class="pyramid-row pyr-l${stage.level} status-${stage.status} ${stage.isPriority ? 'is-priority' : ''}" style="clip-path:${clip};height:${rowHeight}px">
+    const scoreText = stage.score !== null ? stage.score.toFixed(1) : '';
+    return `<div class="pyramid-row pyr-l${stage.level}" style="clip-path:${clip};height:${rowHeight}px">
       <div class="pyramid-inner">
-        <span class="pyramid-num">${String(stage.level).padStart(2, '0')}</span>
         <span class="pyramid-text">
           <span class="pyramid-desc">${stage.labelDesc}</span>
-          <span class="pyramid-key">${stage.labelKey}${priorityChip}</span>
+          <span class="pyramid-key">${stage.labelKey}${scoreText ? `<span class="pyramid-score">${scoreText}</span>` : ''}</span>
         </span>
-        <span class="pyramid-score">${scoreText}</span>
       </div>
     </div>`;
   }).join('');
 
-  const priorityStage = levels.find(s => s.key === priorityKey);
-  const caption = priorityStage
-    ? t('pyramid.priority_caption', { label: priorityStage.labelFull })
-    : t('pyramid.all_healthy');
-
-  return `
-    <div class="pyramid">${rows}</div>
-    <div class="pyramid-caption">${caption}</div>
-    <div class="pyramid-legend">
-      <span class="legend-item"><span class="legend-dot status-healthy"></span>${t('pyramid.healthy')}</span>
-      <span class="legend-item"><span class="legend-dot status-fragile"></span>${t('pyramid.fragile')}</span>
-      <span class="legend-item"><span class="legend-dot status-critical"></span>${t('pyramid.critical')}</span>
-    </div>`;
+  return `<div class="pyramid">${rows}</div>`;
 }
 
 window.showPyramid = function () {
@@ -237,16 +227,22 @@ window.showPyramid = function () {
   overlay.innerHTML = `
     <div class="info-modal pyramid-modal">
       <button class="info-close" onclick="closePyramid()" aria-label="Close">&times;</button>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.25rem">
-        <div class="info-section-title" style="margin:0">${t('pyramid.title')}</div>
-        <button class="btn btn-outline btn-sm" onclick="exportPyramidPDF()" style="font-size:12px">${t('results.export_pdf')}</button>
+      <div class="pyr-modal-topbar">
+        <img src="/assets/cbtw-logo.svg" alt="CBTW">
+        <div class="pyr-modal-toplabel">${t('pyramid.title')}</div>
       </div>
-      <div class="info-meta" style="margin-bottom:1rem">
-        <div><span class="info-meta-label">${t('pyramid.team')}</span>${escapeHtml(teamName)}</div>
-        <div><span class="info-meta-label">${t('pyramid.round')}</span>${escapeHtml(roundLabel)}</div>
-        <div><span class="info-meta-label">${t('pyramid.responses')}</span>${responseCount}</div>
+      <div class="pyr-modal-body">
+        <div class="pyr-modal-header">
+          <div class="pyr-modal-team-block">
+            <div class="pyr-modal-team">${escapeHtml(teamName)}</div>
+            <div class="pyr-modal-round">${escapeHtml(roundLabel)}</div>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="exportPyramidPDF()" style="font-size:12px;flex-shrink:0">${t('results.export_pdf')}</button>
+        </div>
+        <div class="pyr-modal-meta">${responseCount} ${t('pyramid.responses').toLowerCase()}</div>
+        <div class="pyr-modal-divider"></div>
+        ${buildPyramidContent(scores)}
       </div>
-      ${buildPyramidContent(scores)}
     </div>`;
   overlay.style.display = 'flex';
 };
@@ -385,16 +381,13 @@ function renderResults() {
 
   el.innerHTML = `
   <div class="print-header">
-    <div class="print-header-brand">
-      <div class="print-header-mark"></div>
-      <div class="print-header-name">Team<span>Pulse</span></div>
+    <div class="print-header-topbar">
+      <img src="/assets/cbtw-logo.svg" alt="CBTW">
       <div class="print-header-title">${t('results.health_assessment')}</div>
     </div>
-    <div class="print-header-meta">
-      <span>${t('results.team')}: <strong>${escapeHtml(ct.name)}</strong></span>
-      <span>${t('results.round')}: <strong>${rRound ? escapeHtml(rRound.label) : '-'}</strong>${compareMeta}</span>
-      <span>${t('results.responses')}: <strong>${rResp.length}</strong></span>
-      <span>${t('results.generated')}: <strong>${printDate}</strong></span>
+    <div class="print-header-identity">
+      <div class="print-header-teamname">${escapeHtml(ct.name)}</div>
+      <div class="print-header-detail">${rRound ? escapeHtml(rRound.label) : '-'}${compareMeta} &middot; ${rResp.length} ${t('results.responses').toLowerCase()} &middot; ${printDate}</div>
     </div>
   </div>
 
@@ -418,8 +411,6 @@ function renderResults() {
     </div>` : ''}
   </div>
 
-  ${buildSynthesisBlock(sc, dispersion)}
-
   <div class="stats-grid mt">
     <div class="stat-card"><div class="stat-label">${t('results.responses')}</div><div class="stat-value">${rResp.length}</div></div>
     <div class="stat-card"><div class="stat-label">${t('results.overall')}</div><div class="stat-value">${ov.toFixed(1)}<span class="stat-max">/5</span></div></div>
@@ -427,7 +418,7 @@ function renderResults() {
     <div class="stat-card"><div class="stat-label">${t('results.focus')}</div><div class="stat-value" style="font-size:18px;padding-top:8px">${ext(sc, 'min')}</div></div>
   </div>
 
-  <div class="card mt">
+  <div class="card mt scores-card">
     <div class="card-title">${t('results.scores')}</div>
     ${cSc ? `<div style="display:flex;gap:16px;margin-bottom:1rem">
       <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>${escapeHtml(rRound.label)}</div>
@@ -453,11 +444,14 @@ function renderResults() {
 
   ${buildTopBottomSection(qStats)}
 
-  <div class="card mt">
+  <div class="pyramid-pdf-embed"></div>
+
+  <div class="card mt no-pdf">
     <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
       ${t('results.individual')}
       <div class="no-print" style="display:flex;gap:6px">
         <button class="btn btn-outline btn-sm" onclick="showPyramid()">${t('results.pyramid')}</button>
+        <button class="btn btn-outline btn-sm" onclick="exportPagePDF()">${t('results.export_pdf')}</button>
         <button class="btn btn-outline btn-sm" onclick="exportCSV()">${t('results.export_csv')}</button>
         <button class="btn btn-outline btn-sm" onclick="fetchResults()">${t('results.refresh')}</button>
       </div>
@@ -494,9 +488,10 @@ function renderResults() {
       </table>
     </div>
   </div>
+  ${buildAllResponsesBlock(rResp, aliasMap)}
   ${buildLongitudinalSection(ct, roundList)}
 
-  <div class="print-footer">TeamPulse - Lencioni team health assessment - generated on ${printDate}</div>`;
+`;
 }
 
 window.selectResultTeam = function (id) {
@@ -649,28 +644,22 @@ function buildPyramidCanvas(scores) {
   const pyrH = bandRows.reduce((s, b) => s + b.h + GAP, 0) - GAP;
   const canvas = document.createElement('canvas');
   canvas.width = W * SCALE;
-  canvas.height = (pyrH + 90) * SCALE;
+  canvas.height = pyrH * SCALE;
   const ctx = canvas.getContext('2d');
   ctx.scale(SCALE, SCALE);
   ctx.fillStyle = '#fff';
-  ctx.fillRect(0, 0, W, pyrH + 90);
+  ctx.fillRect(0, 0, W, pyrH);
 
   const CX = W / 2;
-  const BAND_COLORS = ['#071440', '#0C2872', '#1451B8', '#1E8FCE', '#38C4DE'];
-  const STATUS_COLORS = { healthy: '#15803D', fragile: '#C2620E', critical: '#CB3F1C' };
-  const EL_GAP = 7;
-  const NUM_W = 26;
-  const CHIP_W = 46, CHIP_H = 14;
-  const SCORE_W = 36, SCORE_H = 20;
+  const BAND_COLORS = ['#1C1C1C', '#1E9FD8', '#F4D93B', '#F7A81C', '#EC4F26'];
 
-  function rrect(x, y, w, h, r) {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.arcTo(x + w, y, x + w, y + h, r);
-    ctx.arcTo(x + w, y + h, x, y + h, r);
-    ctx.arcTo(x, y + h, x, y, r);
-    ctx.arcTo(x, y, x + w, y, r);
-    ctx.closePath();
+  function bandTextColor(hex, alpha = 1) {
+    const r = parseInt(hex.slice(1,3),16)/255;
+    const g = parseInt(hex.slice(3,5),16)/255;
+    const b = parseInt(hex.slice(5,7),16)/255;
+    const lum = 0.299*r + 0.587*g + 0.114*b;
+    const [rv,gv,bv] = lum > 0.5 ? [26,26,26] : [255,255,255];
+    return alpha < 1 ? `rgba(${rv},${gv},${bv},${alpha})` : `rgb(${rv},${gv},${bv})`;
   }
 
   function bandPath(top, bottom, h, y0) {
@@ -690,8 +679,6 @@ function buildPyramidCanvas(scores) {
     ctx.closePath();
   }
 
-  const priorityChipLabel = t('pyramid.priority').toUpperCase();
-
   let y = 0;
   bandRows.forEach(band => {
     bandPath(band.top, band.bottom, band.h, y);
@@ -702,98 +689,104 @@ function buildPyramidCanvas(scores) {
     bandPath(band.top, band.bottom, band.h, y);
     ctx.clip();
 
-    const tY = y + band.h - 18;
+    const bandColor = BAND_COLORS[band.level - 1];
+    const tY_desc = y + band.h - 24;
+    const tY_key  = y + band.h - 11;
 
-    ctx.font = '700 12px Inter, system-ui, sans-serif';
+    // Desc — centered, dimmed
+    ctx.font = '400 8px Inter, system-ui, sans-serif';
+    ctx.fillStyle = bandTextColor(bandColor, 0.68);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(band.labelDesc, CX, tY_desc);
+
+    // Key + score inline, centered as a group
     const keyLabel = band.labelKey.toUpperCase();
+    const scoreStr = band.score !== null ? band.score.toFixed(1) : '';
+    ctx.font = '700 11px Inter, system-ui, sans-serif';
     const keyW = ctx.measureText(keyLabel).width;
-    const chipW = band.isPriority ? (ctx.font = '700 7px Inter, system-ui, sans-serif', ctx.measureText(priorityChipLabel).width + 10, ctx.font = '700 12px Inter, system-ui, sans-serif', CHIP_W) : 0;
-    const totalW = NUM_W + EL_GAP + keyW
-      + (band.isPriority ? EL_GAP + chipW : 0)
-      + (band.score !== null ? EL_GAP + SCORE_W : 0);
+    ctx.font = '500 10px Inter, system-ui, sans-serif';
+    const scoreW = scoreStr ? ctx.measureText(scoreStr).width + 7 : 0;
+    const lineW = keyW + scoreW;
+    let lx = CX - lineW / 2;
 
-    let cx = CX - totalW / 2;
-
-    ctx.font = '800 18px Inter, system-ui, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.font = '700 11px Inter, system-ui, sans-serif';
+    ctx.fillStyle = bandTextColor(bandColor);
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText(String(band.level).padStart(2, '0'), cx, tY);
-    cx += NUM_W + EL_GAP;
+    ctx.fillText(keyLabel, lx, tY_key);
 
-    const textCX = cx + keyW / 2;
-    ctx.font = '400 8px Inter, system-ui, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.82)';
-    ctx.textAlign = 'center';
-    ctx.fillText(band.labelDesc, textCX, tY - 10);
-    ctx.font = '700 12px Inter, system-ui, sans-serif';
-    ctx.fillStyle = '#fff';
-    ctx.fillText(keyLabel, textCX, tY + 3);
-    cx += keyW;
-
-    if (band.isPriority) {
-      cx += EL_GAP;
-      rrect(cx, tY - CHIP_H / 2 + 3, CHIP_W, CHIP_H, 7);
-      ctx.fillStyle = 'rgba(255,255,255,0.92)';
-      ctx.fill();
-      ctx.font = '700 7px Inter, system-ui, sans-serif';
-      ctx.fillStyle = '#1A1A1A';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(priorityChipLabel, cx + CHIP_W / 2, tY + 3);
-      cx += CHIP_W;
-    }
-
-    if (band.score !== null) {
-      cx += EL_GAP;
-      rrect(cx, tY - SCORE_H / 2, SCORE_W, SCORE_H, 10);
-      ctx.fillStyle = STATUS_COLORS[band.status] || 'rgba(255,255,255,0.25)';
-      ctx.fill();
-      ctx.font = '700 11px Inter, system-ui, sans-serif';
-      ctx.fillStyle = '#fff';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(band.score.toFixed(1), cx + SCORE_W / 2, tY);
+    if (scoreStr) {
+      ctx.font = '500 10px Inter, system-ui, sans-serif';
+      ctx.fillStyle = bandTextColor(bandColor, 0.62);
+      ctx.fillText(scoreStr, lx + keyW + 7, tY_key);
     }
 
     ctx.restore();
     y += band.h + GAP;
   });
 
-  const priorityStage = levels.find(s => s.key === priorityKey);
-  const caption = priorityStage
-    ? `${t('pyramid.priority')}: ${priorityStage.labelFull}`
-    : t('pyramid.all_healthy');
-  ctx.font = '400 12px Inter, system-ui, sans-serif';
-  ctx.fillStyle = '#6A655B';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-  ctx.fillText(caption, CX, y + 10);
-
-  const legendItems = [
-    { label: t('pyramid.healthy'), color: '#15803D' },
-    { label: t('pyramid.fragile'), color: '#C2620E' },
-    { label: t('pyramid.critical'), color: '#CB3F1C' },
-  ];
-  ctx.font = '400 12px Inter, system-ui, sans-serif';
-  const iGap = 18;
-  const iWidths = legendItems.map(it => 14 + 5 + ctx.measureText(it.label).width);
-  const legendTotalW = iWidths.reduce((a, b) => a + b, 0) + iGap * (legendItems.length - 1);
-  let lx = CX - legendTotalW / 2;
-  const ly = y + 40;
-  legendItems.forEach((item, i) => {
-    rrect(lx, ly - 6, 12, 12, 3);
-    ctx.fillStyle = item.color;
-    ctx.fill();
-    ctx.fillStyle = '#6A655B';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(item.label, lx + 17, ly);
-    lx += iWidths[i] + iGap;
-  });
-
   return canvas;
 }
+
+window.exportPagePDF = function () {
+  if (!lastPyramidContext) return;
+
+  const pyramidImg = buildPyramidCanvas(lastPyramidContext.scores).toDataURL('image/png');
+
+  // Clone results body, strip screen-only and individual-responses elements
+  const resultsBody = document.getElementById('results-body');
+  if (!resultsBody) return;
+  const clone = resultsBody.cloneNode(true);
+  clone.querySelectorAll('.no-print, .no-pdf, .pyramid-pdf-embed').forEach(el => el.remove());
+
+  // Insert pyramid image just before the print footer
+  const logoUrl = `${location.origin}/assets/cbtw-logo.svg`;
+  const pyramidBlock = document.createElement('div');
+  pyramidBlock.style.cssText = 'page-break-before:always;';
+  pyramidBlock.innerHTML = `
+    <div style="background:#F4D93B;-webkit-print-color-adjust:exact;print-color-adjust:exact;margin-left:-1.5cm;margin-right:-1.5cm;padding:14px 1.5cm;display:flex;align-items:center;justify-content:space-between;">
+      <img src="${logoUrl}" style="height:18px;filter:brightness(0);" alt="CBTW">
+      <span style="font-size:11px;color:rgba(0,0,0,0.45);text-transform:uppercase;letter-spacing:0.07em;font-weight:500;">${t('pyramid.title')}</span>
+    </div>
+    <div style="margin-top:2rem;">
+      <img src="${pyramidImg}" style="max-width:100%;height:auto;display:block;">
+    </div>`;
+  const footer = clone.querySelector('.print-footer');
+  footer ? clone.insertBefore(pyramidBlock, footer) : clone.appendChild(pyramidBlock);
+
+  const cssBase = location.origin + '/css/style.css';
+  const iframe = document.createElement('iframe');
+  iframe.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:0;height:0;border:0;';
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentWindow.document;
+  doc.open();
+  doc.write(`<!DOCTYPE html><html><head>
+    <base href="${location.origin}">
+    <title>TeamPulse — ${escapeHtml(lastPyramidContext.teamName)} — ${escapeHtml(lastPyramidContext.roundLabel)}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="${cssBase}">
+    <style>
+      body{background:#fff;padding:0 1.5cm 1.5cm;}
+      .print-header,.print-footer{display:block!important;}
+      .bar-fill,.bar-fill2{animation:none!important;}
+      @page{margin:0;}
+    </style>
+  </head><body>
+    ${clone.innerHTML}
+  </body></html>`);
+  doc.close();
+
+  iframe.addEventListener('load', () => {
+    // Wait for external CSS + fonts to apply before opening print dialog
+    setTimeout(() => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+      setTimeout(() => iframe.remove(), 2000);
+    }, 400);
+  });
+};
 
 window.exportPyramidPDF = function () {
   if (!lastPyramidContext) return;
@@ -812,25 +805,39 @@ window.exportPyramidPDF = function () {
 
     const doc = iframe.contentWindow.document;
     doc.open();
+    const printDate = new Date().toLocaleDateString();
+    const logoUrl = `${location.origin}/assets/cbtw-logo.svg`;
     doc.write(`<!DOCTYPE html><html><head>
-      <title>${t('pyramid.title')} — ${escapeHtml(teamName)} — ${escapeHtml(roundLabel)}</title>
+      <title>TeamPulse — ${escapeHtml(teamName)} — ${escapeHtml(roundLabel)}</title>
       <style>
         *{box-sizing:border-box;margin:0;padding:0;}
-        body{background:#fff;padding:2cm;font-family:Inter,system-ui,sans-serif;}
-        h2{font-size:18px;font-weight:800;margin-bottom:0.4rem;}
-        .meta{font-size:13px;color:#6A655B;display:flex;gap:2rem;margin-bottom:1.5rem;}
-        .meta strong{color:#1A1A1A;}
-        img{max-width:100%;height:auto;display:block;}
-        @page{margin:1.5cm;}
+        body{background:#fff;font-family:Inter,system-ui,sans-serif;color:#1A1A1A;}
+        .topbar{background:#F4D93B;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:16px 1.5cm;display:flex;align-items:center;justify-content:space-between;}
+        .topbar img{height:20px;filter:brightness(0);}
+        .topbar-label{font-size:11px;color:rgba(0,0,0,0.45);text-transform:uppercase;letter-spacing:0.07em;font-weight:500;}
+        .content{padding:32px 1.5cm 40px;}
+        .team-block{display:flex;align-items:baseline;justify-content:space-between;gap:2rem;margin-bottom:4px;}
+        .team{font-size:30px;font-weight:800;color:#1A1A1A;line-height:1.1;letter-spacing:-0.02em;}
+        .round{font-size:14px;font-weight:500;color:#6A655B;white-space:nowrap;}
+        .meta{font-size:12px;color:#A39D8F;margin-bottom:24px;}
+        .divider{height:1px;background:#E8E3D8;margin-bottom:24px;}
+        img.pyramid{max-width:100%;height:auto;display:block;}
+        @page{margin:0;}
       </style>
     </head><body>
-      <h2>${t('pyramid.title')}</h2>
-      <div class="meta">
-        <span>${t('pyramid.team')} <strong>${escapeHtml(teamName)}</strong></span>
-        <span>${t('pyramid.round')} <strong>${escapeHtml(roundLabel)}</strong></span>
-        <span>${t('pyramid.responses')} <strong>${responseCount}</strong></span>
+      <div class="topbar">
+        <img src="${logoUrl}" alt="CBTW">
+        <div class="topbar-label">${t('pyramid.title')}</div>
       </div>
-      <img src="${imgData}">
+      <div class="content">
+        <div class="team-block">
+          <div class="team">${escapeHtml(teamName)}</div>
+          <div class="round">${escapeHtml(roundLabel)}</div>
+        </div>
+        <div class="meta">${responseCount} ${t('pyramid.responses').toLowerCase()} &middot; ${printDate}</div>
+        <div class="divider"></div>
+        <img class="pyramid" src="${imgData}">
+      </div>
     </body></html>`);
     doc.close();
 

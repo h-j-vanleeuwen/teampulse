@@ -36,3 +36,6 @@ export const getResponses  = ()           => api('responses?select=*,rounds(id,l
 
 export const getPinDB      = ()           => api('settings?key=eq.admin_pin&select=value');
 export const setPinDB      = hash         => api('settings?key=eq.admin_pin', { method: 'PATCH', body: JSON.stringify({ value: hash }) });
+
+export const getQOrder     = ()           => api('settings?key=eq.q_order&select=value');
+export const setQOrder     = (value)      => api('settings', { method: 'POST', body: JSON.stringify({ key: 'q_order', value: JSON.stringify(value) }), prefer: 'resolution=merge-duplicates,return=minimal' });

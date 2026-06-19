@@ -1,4 +1,4 @@
-import { getResponses } from './api.js';
+import { getResponses, getQOrder, setQOrder } from './api.js';
 import { Qs, CAT, COL } from './config.js';
 import { state } from './state.js';
 import { buildPyramidData } from './pyramid.js';
@@ -7,6 +7,16 @@ import { t, getCat, getQs } from './i18n.js';
 // Snapshot of the currently rendered round, so the pyramid modal can rebuild
 // itself from the exact scores on screen without re-walking the state tree.
 let lastPyramidContext = null;
+
+// Custom question order per category, persisted in DB. Keyed by catKey → [qn, ...]
+let customQOrder = {};
+
+export async function initResultsOrder() {
+  try {
+    const rows = await getQOrder();
+    if (rows?.[0]?.value) customQOrder = JSON.parse(rows[0].value);
+  } catch {}
+}
 
 function qText(q) {
   return getQs().find(tq => tq.n === q.n)?.text || q.text;
@@ -72,7 +82,13 @@ function calcQuestionStats(responses) {
       const v = a && typeof a === 'object' ? a.score : a;
       if (v !== undefined && v !== null) vals.push(Number(v));
     });
-    if (vals.length) stats[q.n] = { q, avg: vals.reduce((a, b) => a + b, 0) / vals.length };
+    if (vals.length) {
+      const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+      const delta = vals.length > 1
+        ? Math.sqrt(vals.reduce((s, v) => s + (v - avg) ** 2, 0) / vals.length)
+        : 0;
+      stats[q.n] = { q, avg, delta };
+    }
   });
   return stats;
 }
@@ -134,28 +150,33 @@ function buildAllResponsesBlock(rResp, aliasMap) {
 function buildTopBottomSection(qStats) {
   const cat = getCat();
   const cols = Object.keys(CAT).map(catKey => {
-    const catList = Object.values(qStats).filter(s => s.q.cat === catKey);
-    if (catList.length < 2) return '';
+    const statsMap = Object.fromEntries(
+      Object.values(qStats).filter(s => s.q.cat === catKey).map(s => [s.q.n, s])
+    );
+    if (!Object.keys(statsMap).length) return '';
 
-    const sorted = [...catList].sort((a, b) => b.avg - a.avg);
-    const top = sorted.slice(0, 2);
-    const bottom = sorted.slice(-2).reverse();
+    // Apply custom order if set, otherwise sort by delta desc
+    let catList;
+    if (customQOrder[catKey]) {
+      catList = customQOrder[catKey].map(n => statsMap[n]).filter(Boolean);
+      const ordered = new Set(customQOrder[catKey]);
+      const rest = Object.values(statsMap).filter(s => !ordered.has(s.q.n)).sort((a, b) => b.delta - a.delta);
+      catList = [...catList, ...rest];
+    } else {
+      catList = Object.values(statsMap).sort((a, b) => b.delta - a.delta);
+    }
 
-    const renderRow = (s, type) => {
-      const icon = type === 'top' ? '▲' : '▼';
-      const cls = type === 'top' ? 'topbot-up' : 'topbot-down';
-      return `<div class="topbot-q-row ${cls}">
-        <span class="topbot-icon">${icon}</span>
+    const rows = catList.map(s => `
+      <div class="topbot-q-row" draggable="true" data-qn="${s.q.n}" data-cat="${catKey}">
+        <span class="topbot-drag-handle no-print">⠿</span>
         <span class="topbot-text">${escapeHtml(qText(s.q))}</span>
-        <span class="topbot-score">${s.avg.toFixed(1)}</span>
-      </div>`;
-    };
+        <span class="topbot-avg">${s.avg.toFixed(1)}</span>
+        <span class="topbot-delta">Δ ${s.delta.toFixed(2)}</span>
+      </div>`).join('');
 
-    return `<div class="topbot-cat">
-      <div class="topbot-cat-title">${escapeHtml(cat[catKey])}</div>
-      ${top.map(s => renderRow(s, 'top')).join('')}
-      <div class="topbot-sep"></div>
-      ${bottom.map(s => renderRow(s, 'bottom')).join('')}
+    return `<div class="topbot-cat" data-cat="${catKey}">
+      <div class="topbot-cat-title" style="color:${COL[catKey]}">${escapeHtml(cat[catKey])}</div>
+      ${rows}
     </div>`;
   }).filter(Boolean).join('');
 
@@ -164,7 +185,7 @@ function buildTopBottomSection(qStats) {
   return `
   <div class="card mt questions-card">
     <div class="card-title">${t('results.top_questions')}</div>
-    <div class="topbot-grid">${cols}</div>
+    <div class="topbot-list">${cols}</div>
   </div>`;
 }
 
@@ -496,6 +517,43 @@ function renderResults() {
   ${buildLongitudinalSection(ct, roundList)}
 
 `;
+  initQuestionsOrderDrag();
+}
+
+function initQuestionsOrderDrag() {
+  let dragSrc = null;
+
+  document.querySelectorAll('.topbot-q-row[draggable]').forEach(row => {
+    row.addEventListener('dragstart', e => {
+      dragSrc = row;
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(() => row.classList.add('dragging'), 0);
+    });
+    row.addEventListener('dragend', () => {
+      row.classList.remove('dragging');
+      document.querySelectorAll('.topbot-q-row').forEach(r => r.classList.remove('drag-over'));
+    });
+    row.addEventListener('dragover', e => {
+      e.preventDefault();
+      if (!dragSrc || row === dragSrc) return;
+      if (row.dataset.cat !== dragSrc.dataset.cat) return;
+      document.querySelectorAll('.topbot-q-row').forEach(r => r.classList.remove('drag-over'));
+      row.classList.add('drag-over');
+    });
+    row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
+    row.addEventListener('drop', e => {
+      e.preventDefault();
+      if (!dragSrc || dragSrc === row || row.dataset.cat !== dragSrc.dataset.cat) return;
+      const parent = row.parentElement;
+      const rows = [...parent.querySelectorAll('.topbot-q-row')];
+      const srcIdx = rows.indexOf(dragSrc);
+      const tgtIdx = rows.indexOf(row);
+      parent.insertBefore(dragSrc, srcIdx < tgtIdx ? row.nextSibling : row);
+      customQOrder[dragSrc.dataset.cat] = [...parent.querySelectorAll('.topbot-q-row')].map(r => Number(r.dataset.qn));
+      setQOrder(customQOrder).catch(() => {});
+      row.classList.remove('drag-over');
+    });
+  });
 }
 
 window.selectResultTeam = function (id) {

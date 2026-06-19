@@ -1,7 +1,7 @@
 import { state } from './state.js';
 import { loadAll } from './admin.js';
 import { renderSurvey, loadRoundFromUrl } from './survey.js';
-import { fetchResults } from './results.js';
+import { fetchResults, initResultsOrder } from './results.js';
 import { initConfetti } from './confetti.js';
 import { initAuth, getSession, signIn, signOut } from './auth.js';
 import { setLang, getLang, t } from './i18n.js';
@@ -103,7 +103,7 @@ async function boot() {
   document.querySelectorAll('.lang-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.lang === getLang());
   });
-  await loadAll();
+  await Promise.all([loadAll(), initResultsOrder()]);
   const hasRound = await loadRoundFromUrl();
   if (hasRound) {
     showPage('survey');

@@ -114,17 +114,35 @@ function buildAllResponsesBlock(rResp, aliasMap) {
   const activeQs = Qs.filter(q => answeredNums.has(q.n));
   if (!activeQs.length) return '';
 
+  const aliases = rResp.map((r, i) => aliasMap[`${r.first_name} ${r.last_name}`] || `Participant ${i + 1}`);
+
+  const filterHtml = `
+    <div class="allresp-filter no-print">
+      <div class="allresp-dropdown" id="allresp-dropdown">
+        <button class="allresp-filter-btn" onclick="toggleAllrespDropdown(event)">
+          <span id="allresp-filter-label">Tous les participants</span> ▾
+        </button>
+        <div class="allresp-dropdown-menu" id="allresp-dropdown-menu">
+          <label class="allresp-dropdown-all">
+            <input type="checkbox" id="allresp-select-all" checked onchange="toggleAllAllresp(this)"> Tous
+          </label>
+          <div class="allresp-dropdown-sep"></div>
+          ${aliases.map(a => `<label><input type="checkbox" class="allresp-alias-check" value="${escapeHtml(a)}" checked onchange="filterAllresp()"> ${escapeHtml(a)}</label>`).join('')}
+        </div>
+      </div>
+    </div>`;
+
   const groups = Object.keys(CAT).map(catKey => {
     const qs = activeQs.filter(q => q.cat === catKey);
     if (!qs.length) return '';
     const qBlocks = qs.map(q => {
       const pRows = rResp.map((r, i) => {
-        const alias = aliasMap[`${r.first_name} ${r.last_name}`] || `Participant ${i + 1}`;
+        const alias = aliases[i];
         const a = r.answers?.[q.n];
         const score = a && typeof a === 'object' ? a.score : (typeof a === 'number' ? a : null);
         const comment = a && typeof a === 'object' && a.comment ? a.comment.trim() : '';
         if (score === null) return '';
-        return `<div class="allresp-p-row">
+        return `<div class="allresp-p-row" data-alias="${escapeHtml(alias)}">
           <span class="allresp-p-alias">${alias}</span>
           <span class="allresp-p-score">${score}<span class="allresp-p-max">/5</span></span>
           ${comment ? `<span class="allresp-p-comment">${escapeHtml(comment)}</span>` : ''}
@@ -142,8 +160,16 @@ function buildAllResponsesBlock(rResp, aliasMap) {
   }).filter(Boolean).join('');
 
   return `<div class="card mt allresp-card no-pdf">
-    <div class="card-title">Réponses par question</div>
-    ${groups}
+    <div class="allresp-header" onclick="toggleAllrespBlock()" style="cursor:pointer">
+      <div class="card-title" style="margin-bottom:0">Réponses par question</div>
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <div class="no-print" onclick="event.stopPropagation()">${filterHtml}</div>
+        <span class="allresp-toggle no-print" id="allresp-toggle">▶</span>
+      </div>
+    </div>
+    <div class="allresp-body" id="allresp-body" style="display:none">
+      ${groups}
+    </div>
   </div>`;
 }
 
@@ -289,71 +315,6 @@ export async function fetchResults() {
   }
 }
 
-function buildLongitudinalSection(ct, roundList) {
-  const participantMap = {};
-
-  const allNames = [];
-  roundList.forEach(round => round.responses.forEach(r => allNames.push(`${r.first_name} ${r.last_name}`)));
-  const aliasMap = Object.fromEntries(
-    [...new Set(allNames)].sort().map((n, i) => [n, `Participant ${String.fromCharCode(65 + i)}`])
-  );
-
-  roundList.forEach(round => {
-    round.responses.forEach(r => {
-      const key = `${r.first_name} ${r.last_name}`;
-      if (!participantMap[key]) participantMap[key] = { name: aliasMap[key] || key, rounds: {} };
-      const scores = calcScores([r]);
-      const vals = Object.values(scores).filter(v => v !== null);
-      const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
-      participantMap[key].rounds[round.id] = { avg, scores, label: round.label };
-    });
-  });
-
-  const multiRound = Object.values(participantMap).filter(p => Object.keys(p.rounds).length >= 2);
-  if (!multiRound.length) return '';
-
-  const headers = roundList.map(r => `<th>${escapeHtml(r.label)}</th>`).join('');
-
-  const rows = multiRound.map(p => {
-    const roundCells = roundList.map(r => {
-      const rd = p.rounds[r.id];
-      if (!rd || rd.avg === null) return '<td><span style="color:var(--ink3)">-</span></td>';
-      const v = rd.avg;
-      return `<td><span class="score-pill score-${Math.round(v)}">${v.toFixed(1)}</span></td>`;
-    }).join('');
-
-    const presentRounds = roundList.filter(r => p.rounds[r.id] && p.rounds[r.id].avg !== null);
-    let trendCell = '<td><span style="color:var(--ink3)">-</span></td>';
-    if (presentRounds.length >= 2) {
-      const first = p.rounds[presentRounds[0].id].avg;
-      const last = p.rounds[presentRounds[presentRounds.length - 1].id].avg;
-      const diff = last - first;
-      const isUp = diff > 0.15;
-      const isDown = diff < -0.15;
-      const arrow = isUp ? '↑' : isDown ? '↓' : '→';
-      const color = isUp ? 'var(--green)' : isDown ? 'var(--red)' : 'var(--ink3)';
-      const sign = diff > 0 ? '+' : '';
-      trendCell = `<td><span class="trend-badge" style="color:${color}">${arrow} ${sign}${diff.toFixed(1)}</span></td>`;
-    }
-
-    return `<tr class="longi-row">
-      <td style="font-weight:500">${escapeHtml(p.name)}</td>
-      ${roundCells}
-      ${trendCell}
-    </tr>`;
-  }).join('');
-
-  return `
-  <div class="card mt">
-    <div class="card-title">${t('results.evolution')}</div>
-    <div style="overflow-x:auto">
-      <table class="responses-table longi-table">
-        <thead><tr><th>${t('results.participant')}</th>${headers}<th>${t('results.trend')}</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>
-  </div>`;
-}
 
 function renderResults() {
   const el = document.getElementById('results-body');
@@ -378,6 +339,8 @@ function renderResults() {
 
   if (!state.rTeamId || !teamMap[state.rTeamId]) state.rTeamId = teamList[0].id;
   const ct = teamMap[state.rTeamId];
+  const ctData = state.teams.find(t_ => t_.id === state.rTeamId);
+  const expectedParticipants = ctData?.expected_participants || null;
   const roundList = Object.values(ct.rounds);
   if (!state.rRoundId || !ct.rounds[state.rRoundId]) state.rRoundId = roundList[0]?.id || null;
   if (state.cRoundId === state.rRoundId) state.cRoundId = null;
@@ -441,6 +404,7 @@ function renderResults() {
     <div class="stat-card"><div class="stat-label">${t('results.overall')}</div><div class="stat-value">${ov.toFixed(1)}<span class="stat-max">/5</span></div></div>
     <div class="stat-card"><div class="stat-label">${t('results.strongest')}</div><div class="stat-value" style="font-size:18px;padding-top:8px">${ext(sc, 'max')}</div></div>
     <div class="stat-card"><div class="stat-label">${t('results.focus')}</div><div class="stat-value" style="font-size:18px;padding-top:8px">${ext(sc, 'min')}</div></div>
+    ${expectedParticipants ? `<div class="stat-card"><div class="stat-label">PARTICIPATION</div><div class="stat-value" style="font-size:20px;padding-top:6px">${rResp.length}/${expectedParticipants}</div></div>` : ''}
   </div>
 
   <div class="card mt scores-card">
@@ -514,11 +478,53 @@ function renderResults() {
     </div>
   </div>
   ${buildAllResponsesBlock(rResp, aliasMap)}
-  ${buildLongitudinalSection(ct, roundList)}
 
 `;
   initQuestionsOrderDrag();
+  initAllrespFilter();
 }
+
+let _allrespFilterListenerAdded = false;
+function initAllrespFilter() {
+  if (_allrespFilterListenerAdded) return;
+  _allrespFilterListenerAdded = true;
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#allresp-dropdown')) {
+      document.getElementById('allresp-dropdown-menu')?.classList.remove('open');
+    }
+  });
+}
+
+window.toggleAllrespBlock = function() {
+  const body = document.getElementById('allresp-body');
+  const toggle = document.getElementById('allresp-toggle');
+  if (!body) return;
+  const open = body.style.display === 'none';
+  body.style.display = open ? '' : 'none';
+  if (toggle) toggle.textContent = open ? '▼' : '▶';
+};
+
+window.toggleAllrespDropdown = function(e) {
+  e.stopPropagation();
+  document.getElementById('allresp-dropdown-menu').classList.toggle('open');
+};
+
+window.filterAllresp = function() {
+  const checks = [...document.querySelectorAll('.allresp-alias-check')];
+  const selected = new Set(checks.filter(c => c.checked).map(c => c.value));
+  document.querySelectorAll('.allresp-p-row').forEach(row => {
+    row.style.display = selected.has(row.dataset.alias) ? '' : 'none';
+  });
+  const lbl = document.getElementById('allresp-filter-label');
+  const allCheck = document.getElementById('allresp-select-all');
+  if (lbl) lbl.textContent = selected.size === checks.length ? 'Tous les participants' : `${selected.size} / ${checks.length} participant(s)`;
+  if (allCheck) allCheck.checked = selected.size === checks.length;
+};
+
+window.toggleAllAllresp = function(cb) {
+  document.querySelectorAll('.allresp-alias-check').forEach(c => { c.checked = cb.checked; });
+  window.filterAllresp();
+};
 
 function initQuestionsOrderDrag() {
   let dragSrc = null;

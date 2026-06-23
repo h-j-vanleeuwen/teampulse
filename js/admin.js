@@ -1,4 +1,4 @@
-import { getTeams, addTeamDB, delTeamDB, getRounds, addRoundDB, updateRoundQs, delRoundDB } from './api.js';
+import { getTeams, addTeamDB, updateTeamDB, delTeamDB, getRounds, addRoundDB, updateRoundQs, delRoundDB } from './api.js';
 import { state } from './state.js';
 import { t, getQs } from './i18n.js';
 
@@ -31,6 +31,7 @@ function renderTeams() {
   el.innerHTML = state.teams.map(t_ => `
     <div class="team-chip ${t_.id === state.activeTeamId ? 'active' : ''}" onclick="selectTeam('${t_.id}')">
       <span class="team-chip-name">${escapeHtml(t_.name)}</span>
+      <span class="team-chip-expected" onclick="event.stopPropagation();editTeamExpected('${t_.id}')" title="Participants attendus">${t_.expected_participants != null ? t_.expected_participants + 'p' : '+ participants'}</span>
       <button class="team-chip-del" onclick="event.stopPropagation();rmTeam('${t_.id}','${escapeHtml(t_.name)}')">x</button>
     </div>`).join('');
 }
@@ -49,6 +50,7 @@ window.selectTeam = function (id) {
 
 window.addTeam = async function () {
   const inp = document.getElementById('new-team');
+  const sizeInp = document.getElementById('new-team-expected');
   const name = inp.value.trim();
   if (!name) return;
   if (state.teams.find(t_ => t_.name === name)) {
@@ -56,12 +58,30 @@ window.addTeam = async function () {
     setTimeout(() => inp.classList.remove('input-error'), 1500);
     return;
   }
+  const expected = parseInt(sizeInp?.value) || null;
   try {
-    await addTeamDB(name);
+    await addTeamDB(name, expected);
     inp.value = '';
+    if (sizeInp) sizeInp.value = '';
     await loadAll();
   } catch (e) {
     alert(t('alert.add_team'));
+  }
+};
+
+
+window.editTeamExpected = async function (id) {
+  const team = state.teams.find(t_ => t_.id === id);
+  const current = team?.expected_participants ?? '';
+  const val = prompt('Participants attendus pour cette équipe :', current);
+  if (val === null) return;
+  const num = val.trim() === '' ? null : parseInt(val);
+  if (val.trim() !== '' && (isNaN(num) || num <= 0)) return;
+  try {
+    await updateTeamDB(id, { expected_participants: num });
+    await loadAll();
+  } catch (e) {
+    alert('Erreur lors de la mise à jour');
   }
 };
 

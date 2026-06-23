@@ -53,8 +53,9 @@
   <div class="card">
     <div class="card-title" data-i18n="admin.teams">Teams</div>
     <div class="team-list" id="team-list"><div class="text-sm" style="color:var(--ink3)" data-i18n="admin.loading">Loading...</div></div>
-    <div class="row">
-      <input type="text" id="new-team" data-i18n-placeholder="admin.new_team" placeholder="New team name..." style="max-width:260px" onkeydown="if(event.key==='Enter')addTeam()">
+    <div class="row" style="flex-wrap:wrap;gap:8px">
+      <input type="text" id="new-team" data-i18n-placeholder="admin.new_team" placeholder="New team name..." style="max-width:220px" onkeydown="if(event.key==='Enter')addTeam()">
+      <input type="number" id="new-team-expected" min="1" placeholder="Nb participants (optionnel)" style="max-width:190px" onkeydown="if(event.key==='Enter')addTeam()">
       <button class="btn btn-outline btn-sm" onclick="addTeam()" data-i18n="admin.add_team">+ Add team</button>
     </div>
   </div>

@@ -16,7 +16,8 @@ async function api(path, opts = {}) {
 }
 
 export const getTeams      = ()           => api('teams?select=*&order=created_at.asc');
-export const addTeamDB     = name         => api('teams', { method: 'POST', body: JSON.stringify({ name }) });
+export const addTeamDB     = (name, expected) => api('teams', { method: 'POST', body: JSON.stringify(expected ? { name, expected_participants: expected } : { name }) });
+export const updateTeamDB  = (id, data)   => api('teams?id=eq.' + id, { method: 'PATCH', body: JSON.stringify(data) });
 export const delTeamDB     = id           => api('teams?id=eq.' + id, { method: 'DELETE', prefer: '' });
 
 export const getRounds     = ()           => api('rounds?select=*,teams(name)&order=created_at.asc');

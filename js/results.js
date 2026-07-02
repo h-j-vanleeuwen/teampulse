@@ -193,7 +193,7 @@ function buildTopBottomSection(qStats) {
     }
 
     const rows = catList.map(s => `
-      <div class="topbot-q-row" draggable="true" data-qn="${s.q.n}" data-cat="${catKey}">
+      <div class="topbot-q-row" draggable="true" data-qn="${s.q.n}" data-cat="${catKey}" data-avg="${s.avg.toFixed(2)}" data-delta="${s.delta.toFixed(2)}">
         <span class="topbot-drag-handle no-print">⠿</span>
         <span class="topbot-text">${escapeHtml(qText(s.q))}</span>
         <span class="topbot-avg">${s.avg.toFixed(1)}</span>
@@ -201,7 +201,13 @@ function buildTopBottomSection(qStats) {
       </div>`).join('');
 
     return `<div class="topbot-cat" data-cat="${catKey}">
-      <div class="topbot-cat-title" style="color:${COL[catKey]}">${escapeHtml(cat[catKey])}</div>
+      <div class="topbot-cat-header">
+        <div class="topbot-cat-title" style="color:${COL[catKey]}">${escapeHtml(cat[catKey])}</div>
+        <div class="topbot-sort no-print">
+          <button class="topbot-sort-btn active" data-sort="delta" onclick="sortTopbotCat('${catKey}','delta')" title="Trier par divergence">⇅</button>
+          <button class="topbot-sort-btn" data-sort="avg" onclick="sortTopbotCat('${catKey}','avg')" title="Trier par moyenne">◎</button>
+        </div>
+      </div>
       ${rows}
     </div>`;
   }).filter(Boolean).join('');
@@ -339,8 +345,8 @@ function renderResults() {
 
   if (!state.rTeamId || !teamMap[state.rTeamId]) state.rTeamId = teamList[0].id;
   const ct = teamMap[state.rTeamId];
-  const ctData = state.teams.find(t_ => t_.id === state.rTeamId);
-  const expectedParticipants = ctData?.expected_participants || null;
+  const roundData = state.rounds.find(r => r.id === state.rRoundId);
+  const expectedParticipants = roundData?.expected_participants || null;
   const roundList = Object.values(ct.rounds);
   if (!state.rRoundId || !ct.rounds[state.rRoundId]) state.rRoundId = roundList[0]?.id || null;
   if (state.cRoundId === state.rRoundId) state.cRoundId = null;
@@ -420,7 +426,7 @@ function renderResults() {
         const p = s !== null ? (s / 5 * 100).toFixed(1) : 0;
         const cp = cs !== null ? (cs / 5 * 100).toFixed(1) : 0;
         return `<div class="bar-row">
-          <div class="bar-label">${label}${dispBadge(dispersion[catKey])}</div>
+          <div class="bar-label">${label}</div>
           <div class="bar-track">
             ${cs !== null ? `<div class="bar-fill2" style="width:${cp}%;background:${COL[catKey]}"></div>` : ''}
             <div class="bar-fill" style="width:${p}%;background:${COL[catKey]}"><span>${s !== null ? s.toFixed(2) : '-'}</span></div>
@@ -524,6 +530,21 @@ window.filterAllresp = function() {
 window.toggleAllAllresp = function(cb) {
   document.querySelectorAll('.allresp-alias-check').forEach(c => { c.checked = cb.checked; });
   window.filterAllresp();
+};
+
+window.sortTopbotCat = function(catKey, sortBy) {
+  const catEl = document.querySelector(`.topbot-cat[data-cat="${catKey}"]`);
+  if (!catEl) return;
+  const rows = [...catEl.querySelectorAll('.topbot-q-row')];
+  rows.sort((a, b) => sortBy === 'avg'
+    ? Number(b.dataset.avg) - Number(a.dataset.avg)
+    : Number(b.dataset.delta) - Number(a.dataset.delta)
+  );
+  rows.forEach(r => catEl.appendChild(r));
+  catEl.querySelectorAll('.topbot-sort-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.sort === sortBy);
+  });
+  delete customQOrder[catKey];
 };
 
 function initQuestionsOrderDrag() {

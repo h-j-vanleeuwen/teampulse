@@ -278,7 +278,12 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 
 /* QUESTIONS PAR DELTA */
 .topbot-list{display:grid;grid-template-columns:1fr;gap:1rem;}
 .topbot-cat{background:#fff;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.75rem;}
-.topbot-cat-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem;}
+.topbot-cat-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;}
+.topbot-cat-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;}
+.topbot-sort{display:flex;gap:2px;}
+.topbot-sort-btn{background:none;border:1px solid var(--border);border-radius:4px;padding:1px 7px;font-size:12px;cursor:pointer;color:var(--ink3);font-family:inherit;transition:all 0.12s;}
+.topbot-sort-btn.active{background:var(--surface2);color:var(--ink);border-color:var(--ink3);}
+.topbot-sort-btn:hover{color:var(--ink);}
 .topbot-q-row{display:flex;align-items:baseline;gap:10px;padding:5px 0;border-bottom:1px solid var(--border2);cursor:default;}
 .topbot-q-row:last-child{border-bottom:none;}
 .topbot-q-row.dragging{opacity:0.35;}

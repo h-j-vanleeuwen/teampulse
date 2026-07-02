@@ -16,15 +16,15 @@ async function api(path, opts = {}) {
 }
 
 export const getTeams      = ()           => api('teams?select=*&order=created_at.asc');
-export const addTeamDB     = (name, expected) => api('teams', { method: 'POST', body: JSON.stringify(expected ? { name, expected_participants: expected } : { name }) });
-export const updateTeamDB  = (id, data)   => api('teams?id=eq.' + id, { method: 'PATCH', body: JSON.stringify(data) });
+export const addTeamDB     = name         => api('teams', { method: 'POST', body: JSON.stringify({ name }) });
 export const delTeamDB     = id           => api('teams?id=eq.' + id, { method: 'DELETE', prefer: '' });
 
 export const getRounds     = ()           => api('rounds?select=*,teams(name)&order=created_at.asc');
-export const addRoundDB    = (teamId, label) => api('rounds', {
+export const addRoundDB    = (teamId, label, expected) => api('rounds', {
   method: 'POST',
-  body: JSON.stringify({ team_id: teamId, label, questions: JSON.stringify(Array.from({ length: 37 }, (_, i) => i + 1)) }),
+  body: JSON.stringify({ team_id: teamId, label, questions: JSON.stringify(Array.from({ length: 37 }, (_, i) => i + 1)), ...(expected ? { expected_participants: expected } : {}) }),
 });
+export const updateRoundDB = (id, data)   => api('rounds?id=eq.' + id, { method: 'PATCH', body: JSON.stringify(data) });
 export const updateRoundQs = (id, qs)     => api('rounds?id=eq.' + id, { method: 'PATCH', body: JSON.stringify({ questions: JSON.stringify([...qs]) }) });
 export const delRoundDB    = id           => api('rounds?id=eq.' + id, { method: 'DELETE', prefer: '' });
 export const getRoundById  = id           => api('rounds?id=eq.' + id + '&select=*,teams(name)');

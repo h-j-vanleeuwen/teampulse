@@ -1,4 +1,4 @@
-import { getTeams, addTeamDB, updateTeamDB, delTeamDB, getRounds, addRoundDB, updateRoundQs, delRoundDB } from './api.js';
+import { getTeams, addTeamDB, delTeamDB, getRounds, addRoundDB, updateRoundDB, updateRoundQs, delRoundDB } from './api.js';
 import { state } from './state.js';
 import { t, getQs } from './i18n.js';
 
@@ -31,7 +31,6 @@ function renderTeams() {
   el.innerHTML = state.teams.map(t_ => `
     <div class="team-chip ${t_.id === state.activeTeamId ? 'active' : ''}" onclick="selectTeam('${t_.id}')">
       <span class="team-chip-name">${escapeHtml(t_.name)}</span>
-      <span class="team-chip-expected" onclick="event.stopPropagation();editTeamExpected('${t_.id}')" title="Participants attendus">${t_.expected_participants != null ? t_.expected_participants + 'p' : '+ participants'}</span>
       <button class="team-chip-del" onclick="event.stopPropagation();rmTeam('${t_.id}','${escapeHtml(t_.name)}')">x</button>
     </div>`).join('');
 }
@@ -50,7 +49,6 @@ window.selectTeam = function (id) {
 
 window.addTeam = async function () {
   const inp = document.getElementById('new-team');
-  const sizeInp = document.getElementById('new-team-expected');
   const name = inp.value.trim();
   if (!name) return;
   if (state.teams.find(t_ => t_.name === name)) {
@@ -58,30 +56,12 @@ window.addTeam = async function () {
     setTimeout(() => inp.classList.remove('input-error'), 1500);
     return;
   }
-  const expected = parseInt(sizeInp?.value) || null;
   try {
-    await addTeamDB(name, expected);
+    await addTeamDB(name);
     inp.value = '';
-    if (sizeInp) sizeInp.value = '';
     await loadAll();
   } catch (e) {
     alert(t('alert.add_team'));
-  }
-};
-
-
-window.editTeamExpected = async function (id) {
-  const team = state.teams.find(t_ => t_.id === id);
-  const current = team?.expected_participants ?? '';
-  const val = prompt('Participants attendus pour cette équipe :', current);
-  if (val === null) return;
-  const num = val.trim() === '' ? null : parseInt(val);
-  if (val.trim() !== '' && (isNaN(num) || num <= 0)) return;
-  try {
-    await updateTeamDB(id, { expected_participants: num });
-    await loadAll();
-  } catch (e) {
-    alert('Erreur lors de la mise à jour');
   }
 };
 
@@ -113,6 +93,7 @@ function renderRounds() {
     <div class="round-item ${r.id === state.activeRoundId ? 'active' : ''}" onclick="selectRound('${r.id}')">
       <span class="round-item-label">${escapeHtml(r.label)}</span>
       <span class="round-item-meta">${JSON.parse(r.questions || '[]').length} questions</span>
+      ${r.expected_participants != null ? `<span class="team-chip-expected" onclick="event.stopPropagation();editRoundExpected('${r.id}')" title="Participants attendus">${r.expected_participants}p</span>` : `<span class="team-chip-expected" onclick="event.stopPropagation();editRoundExpected('${r.id}')" title="Définir participants attendus">+ p</span>`}
       <button class="round-item-del" onclick="event.stopPropagation();rmRound('${r.id}','${escapeHtml(r.label)}')">x</button>
     </div>`).join('');
 }
@@ -139,16 +120,34 @@ window.selectRound = function (id) {
 
 window.addRound = async function () {
   const inp = document.getElementById('new-round');
+  const sizeInp = document.getElementById('new-round-expected');
   const label = inp.value.trim();
   if (!label || !state.activeTeamId) return;
+  const expected = parseInt(sizeInp?.value) || null;
   try {
-    await addRoundDB(state.activeTeamId, label);
+    await addRoundDB(state.activeTeamId, label, expected);
     inp.value = '';
+    if (sizeInp) sizeInp.value = '';
     await loadAll();
     const newR = state.rounds.find(r => r.team_id === state.activeTeamId && r.label === label);
     if (newR) window.selectRound(newR.id);
   } catch (e) {
     alert(t('alert.add_round'));
+  }
+};
+
+window.editRoundExpected = async function (id) {
+  const round = state.rounds.find(r => r.id === id);
+  const current = round?.expected_participants ?? '';
+  const val = prompt('Participants attendus pour ce round :', current);
+  if (val === null) return;
+  const num = val.trim() === '' ? null : parseInt(val);
+  if (val.trim() !== '' && (isNaN(num) || num <= 0)) return;
+  try {
+    await updateRoundDB(id, { expected_participants: num });
+    await loadAll();
+  } catch (e) {
+    alert('Erreur lors de la mise à jour');
   }
 };
 

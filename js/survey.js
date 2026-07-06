@@ -1,6 +1,7 @@
 import { saveResp, getRoundById } from './api.js';
 import { state } from './state.js';
 import { t, getQs } from './i18n.js';
+import { COL } from './config.js';
 
 function escapeHtml(s) {
   return String(s)
@@ -14,6 +15,7 @@ function escapeHtml(s) {
 export function renderSurvey() {
   const el = document.getElementById('survey-body');
   if (!state.sv.round) { renderSvSelectRound(el); return; }
+  if (state.sv.step === -2) { renderSvIntro(el); return; }
   if (state.sv.step === -1) { renderSvName(el); return; }
   const activeQs = getQs().filter(q => state.sv.round.questions.includes(q.n));
   if (state.sv.step >= activeQs.length) { renderSvDone(el); return; }
@@ -38,7 +40,7 @@ export async function loadRoundFromUrl() {
         firstName: '',
         lastName: '',
         answers: {},
-        step: -1,
+        step: -2,
       };
       return true;
     }
@@ -53,6 +55,45 @@ function renderSvSelectRound(el) {
     <div class="empty-icon">&#128279;</div>
     <div class="font-bold" style="margin-bottom:8px;color:var(--ink)">${t('survey.no_link')}</div>
     <div class="text-sm">${t('survey.no_link_sub')}</div>
+  </div>`;
+}
+
+function renderSvIntro(el) {
+  const rows = [
+    { cat: 'Confiance',      dysKey: 'cover.dys.trust',          healthyKey: 'cover.healthy.trust' },
+    { cat: 'Conflit',        dysKey: 'cover.dys.conflict',       healthyKey: 'cover.healthy.conflict' },
+    { cat: 'Engagement',     dysKey: 'cover.dys.commitment',     healthyKey: 'cover.healthy.commitment' },
+    { cat: 'Responsabilite', dysKey: 'cover.dys.accountability', healthyKey: 'cover.healthy.accountability' },
+    { cat: 'Resultats',      dysKey: 'cover.dys.results',        healthyKey: 'cover.healthy.results' },
+  ];
+  const rowsHtml = rows.map(r => `
+    <div class="cover-row">
+      <div class="cover-row-dys">
+        <span class="cover-row-dot" style="background:${COL[r.cat]}"></span>
+        ${escapeHtml(t(r.dysKey))}
+      </div>
+      <div class="cover-row-arrow">→</div>
+      <div class="cover-row-healthy">${escapeHtml(t(r.healthyKey))}</div>
+    </div>`).join('');
+
+  el.innerHTML = `
+  <div class="survey-q-card survey-intro-card">
+    <div class="survey-intro-team">${escapeHtml(state.sv.round.teamName)} &nbsp;·&nbsp; ${escapeHtml(state.sv.round.label)}</div>
+    <p class="survey-intro-pain">${t('cover.pain')}</p>
+    <div class="survey-intro-table-label">${t('cover.table_label')}</div>
+    <div class="cover-contrast">
+      <div class="cover-contrast-header">
+        <span>${t('cover.today')}</span>
+        <span></span>
+        <span>${t('cover.goal')}</span>
+      </div>
+      ${rowsHtml}
+    </div>
+    <p class="survey-intro-conclusion">${t('cover.conclusion')}</p>
+    <div style="text-align:center;margin-top:1.5rem">
+      <button class="btn btn-primary" onclick="svStartSurvey()">${t('survey.start')}</button>
+      <div class="survey-intro-cta">${t('cover.cta')}</div>
+    </div>
   </div>`;
 }
 
@@ -126,6 +167,11 @@ function saveCurrentComment() {
   if (!state.sv.answers[q.n]) state.sv.answers[q.n] = {};
   state.sv.answers[q.n].comment = commentEl.value;
 }
+
+window.svStartSurvey = function () {
+  state.sv.step = -1;
+  renderSurvey();
+};
 
 window.beginQuestions = function () {
   const first = document.getElementById('sv-first').value.trim();

@@ -322,6 +322,7 @@ export async function fetchResults() {
 }
 
 
+
 function renderResults() {
   const el = document.getElementById('results-body');
   const cat = getCat();

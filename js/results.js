@@ -204,8 +204,8 @@ function buildTopBottomSection(qStats) {
       <div class="topbot-cat-header">
         <div class="topbot-cat-title" style="color:${COL[catKey]}">${escapeHtml(cat[catKey])}</div>
         <div class="topbot-sort no-print">
-          <button class="topbot-sort-btn active" data-sort="delta" onclick="sortTopbotCat('${catKey}','delta')" title="Trier par divergence">⇅</button>
           <button class="topbot-sort-btn" data-sort="avg" onclick="sortTopbotCat('${catKey}','avg')" title="Trier par moyenne">◎</button>
+          <button class="topbot-sort-btn active" data-sort="delta" onclick="sortTopbotCat('${catKey}','delta')" title="Trier par divergence">Δ</button>
         </div>
       </div>
       ${rows}
@@ -426,13 +426,16 @@ function renderResults() {
         const cs = cSc ? cSc[catKey] : null;
         const p = s !== null ? (s / 5 * 100).toFixed(1) : 0;
         const cp = cs !== null ? (cs / 5 * 100).toFixed(1) : 0;
+        const diff = (s !== null && cs !== null) ? s - cs : null;
+        const diffStr = diff !== null ? (diff >= 0 ? '+' : '') + diff.toFixed(2) : '';
+        const diffColor = diff === null ? '' : diff > 0 ? 'var(--green)' : diff < 0 ? 'var(--red)' : 'var(--ink3)';
         return `<div class="bar-row">
           <div class="bar-label">${label}</div>
           <div class="bar-track">
             ${cs !== null ? `<div class="bar-fill2" style="width:${cp}%;background:${COL[catKey]}"></div>` : ''}
             <div class="bar-fill" style="width:${p}%;background:${COL[catKey]}"><span>${s !== null ? s.toFixed(2) : '-'}</span></div>
           </div>
-          <div class="bar-score">${s !== null ? s.toFixed(1) : '-'}</div>
+          <div class="bar-score" style="${diffStr ? `color:${diffColor};font-weight:600` : 'color:transparent'}">${diffStr || '0'}</div>
         </div>`;
       }).join('')}
     </div>

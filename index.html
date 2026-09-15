@@ -65,6 +65,10 @@
     <div class="row" style="flex-wrap:wrap;gap:8px">
       <input type="text" id="new-round" data-i18n-placeholder="admin.new_round" placeholder="Round label (e.g. Round 1, Q1 2025)..." style="max-width:240px" onkeydown="if(event.key==='Enter')addRound()">
       <input type="number" id="new-round-expected" min="1" placeholder="Nb participants (optionnel)" style="max-width:190px" onkeydown="if(event.key==='Enter')addRound()">
+      <label class="row" style="gap:6px;font-size:12px;color:var(--ink2);cursor:pointer;white-space:nowrap">
+        <input type="checkbox" id="new-round-send-email">
+        <span data-i18n="admin.send_result_email">Send individual result by email</span>
+      </label>
       <button class="btn btn-outline btn-sm" onclick="addRound()" data-i18n="admin.add_round">+ Add round</button>
     </div>
   </div>
@@ -94,6 +98,12 @@
   <div class="card mt" id="round-link-card" style="display:none">
     <div class="card-title"><span data-i18n="admin.survey_link">Survey link</span> &mdash; <span id="link-round-label" style="color:var(--accent)"></span></div>
     <div class="text-sm" style="margin-bottom:10px" data-i18n="admin.link_desc">Send this link to team members. It opens the survey pre-configured for this round.</div>
+    <label class="row" style="gap:6px;font-size:13px;color:var(--ink2);cursor:pointer;margin-bottom:6px">
+      <input type="checkbox" id="round-send-email-toggle" onchange="toggleRoundSendEmailDetail(this.checked)">
+      <span data-i18n="admin.send_result_email">Send individual result by email</span>
+    </label>
+    <div id="round-email-cats-hint" style="display:none;margin:0 0 6px 22px;color:var(--ink3)" class="text-sm" data-i18n="admin.send_result_cats_hint">Categories revealed to the participant:</div>
+    <div id="round-email-cats" style="display:none;flex-direction:column;gap:4px;margin:0 0 14px 22px"></div>
     <div class="link-box">
       <span class="link-url" id="share-url">-</span>
       <button class="btn btn-outline btn-sm" onclick="copyShare(this)" data-i18n="admin.copy">Copy</button>

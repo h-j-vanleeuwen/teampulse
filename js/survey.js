@@ -1,7 +1,21 @@
-import { saveResp, getRoundById } from './api.js';
+import { saveResp, getRoundById, sendResultEmail } from './api.js';
 import { state } from './state.js';
-import { t, getQs } from './i18n.js';
-import { COL } from './config.js';
+import { t, getQs, getCat } from './i18n.js';
+import { COL, CAT } from './config.js';
+import { calcScores } from './pyramid.js';
+
+function isValidEmail(s) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+}
+
+function parseEmailCategories(raw) {
+  try {
+    const arr = JSON.parse(raw || '[]');
+    return Array.isArray(arr) && arr.length ? arr : Object.keys(CAT);
+  } catch (e) {
+    return Object.keys(CAT);
+  }
+}
 
 function escapeHtml(s) {
   return String(s)
@@ -36,9 +50,12 @@ export async function loadRoundFromUrl() {
           label: r.label,
           teamName: r.teams ? r.teams.name : '',
           questions: JSON.parse(r.questions || '[]'),
+          sendIndividualResult: !!r.send_individual_result,
+          emailCategories: parseEmailCategories(r.email_categories),
         },
         firstName: '',
         lastName: '',
+        email: '',
         answers: {},
         step: -2,
       };
@@ -111,6 +128,12 @@ function renderSvName(el) {
         <input type="text" id="sv-last" placeholder="${t('survey.lastname')}" value="${state.sv.lastName}">
       </div>
     </div>
+    ${state.sv.round.sendIndividualResult ? `
+    <div style="margin-bottom:1.5rem">
+      <label style="font-size:12px;font-weight:600;display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.04em;color:var(--ink3)">${t('survey.email')}</label>
+      <input type="email" id="sv-email" placeholder="${t('survey.email')}" value="${escapeHtml(state.sv.email || '')}">
+      <div class="text-sm" style="margin-top:6px;color:var(--ink3)">${t('survey.email_hint')}</div>
+    </div>` : ''}
     <div class="text-sm" style="margin-bottom:1.5rem">${t('survey.count', { n: state.sv.round.questions.length })}</div>
     <div class="row" style="justify-content:flex-end">
       <button class="btn btn-primary" onclick="beginQuestions()">${t('survey.start')}</button>
@@ -179,8 +202,17 @@ window.beginQuestions = function () {
   if (!first) document.getElementById('sv-first').classList.add('input-error');
   if (!last) document.getElementById('sv-last').classList.add('input-error');
   if (!first || !last) return;
+
+  let email = '';
+  if (state.sv.round.sendIndividualResult) {
+    const emailEl = document.getElementById('sv-email');
+    email = emailEl.value.trim();
+    if (!isValidEmail(email)) { emailEl.classList.add('input-error'); return; }
+  }
+
   state.sv.firstName = first;
   state.sv.lastName = last;
+  state.sv.email = email;
   state.sv.step = 0;
   renderSurvey();
 };
@@ -212,9 +244,34 @@ window.svNext = async function (total) {
   btn.disabled = true;
   btn.innerHTML = `${t('survey.saving')} <span class="spinner"></span>`;
   try {
-    await saveResp(state.sv.round.id, state.sv.firstName, state.sv.lastName, state.sv.answers);
+    await saveResp(state.sv.round.id, state.sv.firstName, state.sv.lastName, state.sv.answers, state.sv.email);
+    if (state.sv.round.sendIndividualResult && state.sv.email) {
+      const categories = state.sv.round.emailCategories;
+      const catLabel = getCat();
+      const answers = getQs()
+        .filter(q => categories.includes(q.cat) && state.sv.answers[q.n]?.score !== undefined)
+        .map(q => ({
+          cat: q.cat,
+          catLabel: catLabel[q.cat],
+          qn: q.n,
+          text: q.text,
+          score: state.sv.answers[q.n].score,
+          comment: (state.sv.answers[q.n].comment || '').trim(),
+        }));
+      // Fire-and-forget: a failed email must not block the thank-you screen.
+      sendResultEmail({
+        to: state.sv.email,
+        firstName: state.sv.firstName,
+        lastName: state.sv.lastName,
+        teamName: state.sv.round.teamName,
+        roundLabel: state.sv.round.label,
+        scores: calcScores([{ answers: state.sv.answers }]),
+        categories,
+        answers,
+      });
+    }
     renderSvDone(document.getElementById('survey-body'));
-    state.sv = { round: null, firstName: '', lastName: '', answers: {}, step: 0 };
+    state.sv = { round: null, firstName: '', lastName: '', email: '', answers: {}, step: 0 };
   } catch (e) {
     btn.disabled = false;
     btn.textContent = t('survey.submit');

@@ -1,7 +1,7 @@
 import { getResponses, getQOrder, setQOrder } from './api.js';
 import { Qs, CAT, COL } from './config.js';
 import { state } from './state.js';
-import { buildPyramidData } from './pyramid.js';
+import { buildPyramidData, calcScores } from './pyramid.js';
 import { t, getCat, getQs } from './i18n.js';
 
 // Snapshot of the currently rendered round, so the pyramid modal can rebuild
@@ -29,21 +29,6 @@ function escapeHtml(s) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
-}
-
-function calcScores(responses) {
-  const out = {};
-  Object.keys(CAT).forEach(cat => {
-    const catQs = Qs.filter(q => q.cat === cat);
-    const vals = [];
-    responses.forEach(r => catQs.forEach(q => {
-      const a = r.answers[q.n];
-      const v = a && typeof a === 'object' ? a.score : a;
-      if (v !== undefined && v !== null) vals.push(Number(v));
-    }));
-    out[cat] = vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length) : null;
-  });
-  return out;
 }
 
 function ext(sc, dir) {

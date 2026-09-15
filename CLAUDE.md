@@ -42,6 +42,10 @@ js/
   confetti.js       # Animation confetti au chargement
   app.js            # Point d'entrée : boot(), showPage(), showPageGuarded()
 vercel.json         # Rewrites SPA
+supabase/
+  migrations/       # SQL à appliquer manuellement (Dashboard > SQL Editor ou `supabase db push`)
+  functions/
+    send-result-email/  # Edge Function : envoie le résultat individuel par email (Resend) — voir son README.md pour le déploiement
 ```
 
 ## Flux de démarrage (boot)
@@ -87,7 +91,7 @@ Scores sur une échelle 1–5 (1 = Never, 5 = Always). Seuils dans `pyramid.js` 
 - **Fragile** : 2.5 ≤ score < 3.5
 - **Critique** : score < 2.5
 
-`calcScores()` dans `results.js` retourne la moyenne par catégorie Lencioni.
+`calcScores()` dans `pyramid.js` retourne la moyenne par catégorie Lencioni (fonction pure, réutilisée par `results.js` et `survey.js`).
 `buildPyramidData()` dans `pyramid.js` est une fonction pure (scores → niveaux + levier prioritaire).
 
 ## Supabase
@@ -97,7 +101,10 @@ Scores sur une échelle 1–5 (1 = Never, 5 = Always). Seuils dans `pyramid.js` 
 - La clé API est publique (anon key) — pas de secret
 - Auth : compte admin créé dans Supabase Dashboard > Authentication > Users
 - Redirect URLs configurées : `http://localhost:3333`, `https://teampulse-eta.vercel.app`
-- `responses` : colonnes `round_id`, `first_name`, `last_name`, `answers` (JSON)
+- `responses` : colonnes `round_id`, `first_name`, `last_name`, `answers` (JSON), `email` (optionnel, rempli si le round demande l'envoi du résultat individuel)
+- `rounds` : colonne `send_individual_result` (bool) — active le champ email + l'envoi auto sur le survey
+- `rounds` : colonne `email_categories` (texte, JSON — même pattern que `questions`) — quelles catégories Lencioni sont révélées dans l'email (indépendant des questions posées), toutes par défaut
+- Edge Function `send-result-email` (Deno, dossier `supabase/functions/`) : envoie le résultat individuel via Resend, appelée depuis `api.js` après soumission du survey — nécessite le secret `RESEND_API_KEY` (voir `supabase/functions/send-result-email/README.md`)
 
 ## Features implémentées
 
@@ -114,3 +121,6 @@ Scores sur une échelle 1–5 (1 = Never, 5 = Always). Seuils dans `pyramid.js` 
 
 - [ ] Export PDF données brutes
 - [ ] Export PDF avec analyse IA
+- [ ] Envoi du résultat individuel par email : code front + Edge Function écrits,
+      déploiement infra (migration SQL, compte Resend, `supabase functions deploy`)
+      à faire manuellement — voir `supabase/functions/send-result-email/README.md`

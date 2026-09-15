@@ -1,4 +1,4 @@
-import { COL } from './config.js';
+import { Qs, CAT, COL } from './config.js';
 import { t } from './i18n.js';
 
 // Lencioni pyramid : levels are stacked, each one rests on the one below it.
@@ -26,6 +26,29 @@ function getStatus(score) {
 
 function isWeak(status) {
   return status === STATUS.FRAGILE || status === STATUS.CRITICAL;
+}
+
+/**
+ * Averages answers per Lencioni category for a set of responses.
+ * Pure function : data in (responses with .answers), data out (avg score per category).
+ * Handles both answer formats : legacy {42: 3} and current {42: {score: 3, comment}}.
+ *
+ * @param {Array<{answers: Object}>} responses
+ * @returns {Object} e.g. { Confiance: 4.2, Conflit: null, ... }
+ */
+export function calcScores(responses) {
+  const out = {};
+  Object.keys(CAT).forEach(cat => {
+    const catQs = Qs.filter(q => q.cat === cat);
+    const vals = [];
+    responses.forEach(r => catQs.forEach(q => {
+      const a = r.answers[q.n];
+      const v = a && typeof a === 'object' ? a.score : a;
+      if (v !== undefined && v !== null) vals.push(Number(v));
+    }));
+    out[cat] = vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length) : null;
+  });
+  return out;
 }
 
 /**

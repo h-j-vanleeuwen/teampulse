@@ -1,6 +1,29 @@
 import { getTeams, addTeamDB, delTeamDB, getRounds, addRoundDB, updateRoundDB, updateRoundQs, delRoundDB } from './api.js';
 import { state } from './state.js';
-import { t, getQs } from './i18n.js';
+import { t, getQs, getCat } from './i18n.js';
+
+const EMAIL_CAT_KEYS = ['Confiance', 'Conflit', 'Engagement', 'Responsabilite', 'Resultats'];
+
+function parseEmailCats(round) {
+  try {
+    const arr = JSON.parse(round.email_categories || '[]');
+    return Array.isArray(arr) && arr.length ? new Set(arr) : new Set(EMAIL_CAT_KEYS);
+  } catch (e) {
+    return new Set(EMAIL_CAT_KEYS);
+  }
+}
+
+function renderEmailCats(round) {
+  const el = document.getElementById('round-email-cats');
+  if (!el) return;
+  const cat = getCat();
+  const selected = parseEmailCats(round);
+  el.innerHTML = EMAIL_CAT_KEYS.map(k => `
+    <label class="row" style="gap:6px;font-size:12px;color:var(--ink2);cursor:pointer">
+      <input type="checkbox" ${selected.has(k) ? 'checked' : ''} onchange="toggleRoundEmailCat('${k}', this.checked)">
+      <span>${escapeHtml(cat[k])}</span>
+    </label>`).join('');
+}
 
 function escapeHtml(s) {
   return String(s)
@@ -94,6 +117,7 @@ function renderRounds() {
       <span class="round-item-label">${escapeHtml(r.label)}</span>
       <span class="round-item-meta">${JSON.parse(r.questions || '[]').length} questions</span>
       ${r.expected_participants != null ? `<span class="team-chip-expected" onclick="event.stopPropagation();editRoundExpected('${r.id}')" title="Participants attendus">${r.expected_participants}p</span>` : `<span class="team-chip-expected" onclick="event.stopPropagation();editRoundExpected('${r.id}')" title="Définir participants attendus">+ p</span>`}
+      ${r.send_individual_result ? `<span class="team-chip-expected active" title="${t('admin.send_result_email')}">&#9993;</span>` : ''}
       <button class="round-item-del" onclick="event.stopPropagation();rmRound('${r.id}','${escapeHtml(r.label)}')">x</button>
     </div>`).join('');
 }
@@ -111,6 +135,10 @@ window.selectRound = function (id) {
   document.getElementById('link-round-label').textContent = r.label;
   document.getElementById('round-qs-card').style.display = 'block';
   document.getElementById('round-link-card').style.display = 'block';
+  document.getElementById('round-send-email-toggle').checked = !!r.send_individual_result;
+  document.getElementById('round-email-cats-hint').style.display = r.send_individual_result ? 'block' : 'none';
+  document.getElementById('round-email-cats').style.display = r.send_individual_result ? 'flex' : 'none';
+  renderEmailCats(r);
   state.catF = 'all';
   document.querySelectorAll('.q-filter-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
   loadQList();
@@ -121,18 +149,55 @@ window.selectRound = function (id) {
 window.addRound = async function () {
   const inp = document.getElementById('new-round');
   const sizeInp = document.getElementById('new-round-expected');
+  const sendEmailInp = document.getElementById('new-round-send-email');
   const label = inp.value.trim();
   if (!label || !state.activeTeamId) return;
   const expected = parseInt(sizeInp?.value) || null;
+  const sendIndividualResult = !!sendEmailInp?.checked;
   try {
-    await addRoundDB(state.activeTeamId, label, expected);
+    await addRoundDB(state.activeTeamId, label, expected, sendIndividualResult);
     inp.value = '';
     if (sizeInp) sizeInp.value = '';
+    if (sendEmailInp) sendEmailInp.checked = false;
     await loadAll();
     const newR = state.rounds.find(r => r.team_id === state.activeTeamId && r.label === label);
     if (newR) window.selectRound(newR.id);
   } catch (e) {
     alert(t('alert.add_round'));
+  }
+};
+
+window.toggleRoundSendEmailDetail = async function (checked) {
+  const id = state.activeRoundId;
+  const round = state.rounds.find(r => r.id === id);
+  const checkbox = document.getElementById('round-send-email-toggle');
+  if (!id || !round) return;
+  try {
+    await updateRoundDB(id, { send_individual_result: checked });
+    round.send_individual_result = checked;
+    document.getElementById('round-email-cats-hint').style.display = checked ? 'block' : 'none';
+    document.getElementById('round-email-cats').style.display = checked ? 'flex' : 'none';
+    if (checked) renderEmailCats(round);
+    renderRounds();
+  } catch (e) {
+    if (checkbox) checkbox.checked = !checked; // revert on failure
+    alert(t('alert.add_round'));
+  }
+};
+
+window.toggleRoundEmailCat = async function (catKey, checked) {
+  const id = state.activeRoundId;
+  const round = state.rounds.find(r => r.id === id);
+  if (!id || !round) return;
+  const current = parseEmailCats(round);
+  checked ? current.add(catKey) : current.delete(catKey);
+  const arr = EMAIL_CAT_KEYS.filter(k => current.has(k)); // keep a stable order
+  try {
+    await updateRoundDB(id, { email_categories: JSON.stringify(arr) });
+    round.email_categories = JSON.stringify(arr);
+  } catch (e) {
+    alert(t('alert.add_round'));
+    renderEmailCats(round); // revert checkboxes to last-known-good state
   }
 };
 
